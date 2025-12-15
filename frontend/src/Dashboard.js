@@ -20,7 +20,7 @@ import UserActionsLog from "./components/UserActionsLog";
 import Reports from "./components/Reports";
 import NotificationsPanel from "./components/NotificationsPanel";
 
-const API_URL = process.env.REACT_APP_API_URL;
+import { getApiUrl, getSignalRUrl } from "./config";
 
 function Dashboard() {
   const [metrics, setMetrics] = useState({
@@ -36,7 +36,7 @@ function Dashboard() {
 
   useEffect(() => {
     // Загружаем метрики дашборда
-    axios.get(`${API_URL}/api/Dashboard/metrics`).then(res => {
+    axios.get(getApiUrl('/api/Dashboard/metrics')).then(res => {
       console.log('=== Dashboard Metrics Response ===');
       console.log('Full response:', res.data);
       console.log('Previous month consumption:', res.data.previousMonthConsumption);
@@ -56,7 +56,7 @@ function Dashboard() {
 
     // Создаем подключение к SignalR
     const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`${API_URL}/notificationHub`, {
+      .withUrl(getSignalRUrl(), {
         withCredentials: true
       })
       .withAutomaticReconnect()

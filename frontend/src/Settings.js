@@ -3,14 +3,13 @@ import logo from "./icons/logo.svg";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { X, User, Key, Link, Edit } from "lucide-react";
+import { getApiUrl } from "./config";
 
 const menu = [
   { label: "Профиль", icon: <User className="w-4 h-4" /> },
   { label: "Изменение пароля", icon: <Key className="w-4 h-4" /> },
   { label: "Объекты и счетчики", icon: <Link className="w-4 h-4" /> },
 ];
-
-const API_URL = process.env.REACT_APP_API_URL;
 
 function Settings() {
   const navigate = useNavigate();
@@ -77,7 +76,7 @@ function Settings() {
 
   useEffect(() => {
     if (active === 2) {
-      axios.get(`${API_URL}/api/Object/all`).then(res => {
+      axios.get(getApiUrl('/api/Object/all')).then(res => {
         setObjects(res.data);
         setSelectedObject(0);
         setSelectedDevice(0);
@@ -107,7 +106,7 @@ function Settings() {
   // Функция для загрузки детальной информации об устройстве
   const loadDeviceDetails = async (deviceId) => {
     try {
-      const response = await axios.get(`${API_URL}/api/Device/details/${deviceId}`);
+      const response = await axios.get(getApiUrl(`/api/Device/details/${deviceId}`));
       const details = response.data;
       setDeviceDetails(details);
       setDeviceName(details.name || "");
@@ -130,7 +129,7 @@ function Settings() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/api/User/profile/${profile.id}`, {
+      await axios.post(getApiUrl(`/api/User/profile/${profile.id}`), {
         Surname: profile.surname,
         Name: profile.name,
         Patronymic: profile.patronymic,
@@ -163,7 +162,7 @@ function Settings() {
     setPwLoading(true);
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      await axios.post(`${API_URL}/api/User/change-password/${user.id}`, {
+      await axios.post(getApiUrl(`/api/User/change-password/${user.id}`), {
         OldPassword: passwords.old,
         NewPassword: passwords.new1
       });
@@ -187,13 +186,13 @@ function Settings() {
 
     try {
       const deviceId = objects[selectedObject].devices[selectedDevice].id;
-      await axios.put(`${API_URL}/api/Device/device/${deviceId}/update`, {
+      await axios.put(getApiUrl(`/api/Device/device/${deviceId}/update`), {
         Comment: comment
       });
 
       // Создаем запись о действии пользователя
       const user = JSON.parse(localStorage.getItem("user"));
-      await axios.post(`${API_URL}/api/UserActions/create`, {
+      await axios.post(getApiUrl('/api/UserActions/create'), {
         UserId: user.id,
         ActionId: 1, // ID действия "Изменение комментария"
         Description: `Изменен комментарий устройства ${objects[selectedObject].devices[selectedDevice].name}`
@@ -238,13 +237,13 @@ function Settings() {
       const deviceId = objects[selectedObject].devices[selectedDevice].id;
       const trustedBeforeDate = new Date(trustedBefore);
       
-      await axios.put(`${API_URL}/api/Device/device/${deviceId}/update`, {
+      await axios.put(getApiUrl(`/api/Device/device/${deviceId}/update`), {
         TrustedBefore: trustedBeforeDate.toISOString()
       });
 
       // Создаем запись о действии пользователя
       const user = JSON.parse(localStorage.getItem("user"));
-      await axios.post(`${API_URL}/api/UserActions/create`, {
+      await axios.post(getApiUrl('/api/UserActions/create'), {
         UserId: user.id,
         ActionId: 2, // ID действия "Изменение даты поверки"
         Description: `Изменена дата последней поверки устройства ${objects[selectedObject].devices[selectedDevice].name} на ${trustedBeforeDate.toLocaleDateString()}`
@@ -280,7 +279,7 @@ function Settings() {
   const handleDeviceNameSave = async () => {
     try {
       const deviceId = objects[selectedObject].devices[selectedDevice].id;
-      await axios.put(`${API_URL}/api/Device/edit`, {
+      await axios.put(getApiUrl('/api/Device/edit'), {
         id: deviceId,
         name: deviceName
       });
@@ -308,7 +307,7 @@ function Settings() {
   const handleIpAddressSave = async () => {
     try {
       const deviceId = objects[selectedObject].devices[selectedDevice].id;
-      await axios.put(`${API_URL}/api/Device/edit`, {
+      await axios.put(getApiUrl('/api/Device/edit'), {
         id: deviceId,
         ipAddress: ipAddress
       });
@@ -331,7 +330,7 @@ function Settings() {
   const handleNetworkPortSave = async () => {
     try {
       const deviceId = objects[selectedObject].devices[selectedDevice].id;
-      await axios.put(`${API_URL}/api/Device/edit`, {
+      await axios.put(getApiUrl('/api/Device/edit'), {
         id: deviceId,
         networkPort: parseInt(networkPort)
       });
@@ -354,7 +353,7 @@ function Settings() {
   const handleKoeffTransSave = async () => {
     try {
       const deviceId = objects[selectedObject].devices[selectedDevice].id;
-      await axios.put(`${API_URL}/api/Device/edit`, {
+      await axios.put(getApiUrl('/api/Device/edit'), {
         id: deviceId,
         koeffTrans: parseFloat(koeffTrans)
       });
@@ -379,7 +378,7 @@ function Settings() {
       const deviceId = objects[selectedObject].devices[selectedDevice].id;
       const user = JSON.parse(localStorage.getItem("user"));
       
-      await axios.put(`${API_URL}/api/Device/edit`, {
+      await axios.put(getApiUrl('/api/Device/edit'), {
         id: deviceId,
         scanInterval: parseInt(deviceScanInterval),
         userId: user?.id
@@ -404,7 +403,7 @@ function Settings() {
     try {
       const deviceId = objects[selectedObject].devices[selectedDevice].id;
       
-      await axios.put(`${API_URL}/api/Device/edit`, {
+      await axios.put(getApiUrl('/api/Device/edit'), {
         id: deviceId,
         sortId: parseInt(sortId) || null
       });
@@ -428,7 +427,7 @@ function Settings() {
     try {
       const deviceId = objects[selectedObject].devices[selectedDevice].id;
       
-      await axios.put(`${API_URL}/api/Device/edit`, {
+      await axios.put(getApiUrl('/api/Device/edit'), {
         id: deviceId,
         devAddr: parseInt(devAddr) || null
       });
@@ -453,7 +452,7 @@ function Settings() {
       const deviceId = objects[selectedObject].devices[selectedDevice].id;
       const user = JSON.parse(localStorage.getItem("user"));
       
-      await axios.put(`${API_URL}/api/Device/edit`, {
+      await axios.put(getApiUrl('/api/Device/edit'), {
         id: deviceId,
         active: deviceActive,
         userId: user?.id
@@ -528,7 +527,7 @@ function Settings() {
                     try {
                       const user = JSON.parse(localStorage.getItem('user'));
                       // Создаем запись о выходе из системы
-                      await axios.post(`${API_URL}/api/UserActions/create`, {
+                      await axios.post(getApiUrl('/api/UserActions/create'), {
                         UserId: user.id,
                         ActionId: 4, // ID действия "Выход из системы"
                         Description: `Пользователь ${user.name} ${user.surname} вышел из системы`

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import { getApiUrl } from '../config';
 
 // Функция для получения локального времени в формате datetime-local
 const getLocalDateTime = (date = new Date()) => {
@@ -64,7 +64,7 @@ function DataVisualization() {
 
   const fetchObjects = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/Visualization/objects`);
+      const response = await axios.get(getApiUrl('/api/Visualization/objects'));
       setObjects(response.data);
     } catch (error) {
       console.error('Error fetching objects:', error);
@@ -73,7 +73,7 @@ function DataVisualization() {
 
   const fetchDeviceTypes = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/Visualization/device-types`);
+      const response = await axios.get(getApiUrl('/api/Visualization/device-types'));
       setDeviceTypes(response.data);
     } catch (error) {
       console.error('Error fetching device types:', error);
@@ -93,7 +93,7 @@ function DataVisualization() {
       }
       
       // Используем новый endpoint для получения читаемых параметров
-      const response = await axios.get(`${API_URL}/api/Visualization/parameters-readable/${deviceType}`);
+      const response = await axios.get(getApiUrl(`/api/Visualization/parameters-readable/${deviceType}`));
       setParameters(response.data);
     } catch (error) {
       console.error('Error fetching parameters:', error);
@@ -136,12 +136,12 @@ function DataVisualization() {
         params.append('parameters', param);
       });
 
-      const response = await axios.get(`${API_URL}/api/Visualization/data?${params}`);
+      const response = await axios.get(getApiUrl(`/api/Visualization/data?${params}`));
       const responseData = response.data.data || [];
       
       // Отладочная информация
       console.log('=== Отладка fetchData ===');
-      console.log('URL запроса:', `${API_URL}/api/Visualization/data?${params}`);
+      console.log('URL запроса:', getApiUrl(`/api/Visualization/data?${params}`));
       console.log('Ответ от сервера:', response.data);
       console.log('Данные для отображения:', responseData);
       console.log('Количество записей:', responseData.length);
@@ -223,7 +223,7 @@ function DataVisualization() {
 
       console.log('Данные для отчета:', requestData);
 
-      const response = await axios.post(`${API_URL}/api/Report/create-visualization`, requestData);
+      const response = await axios.post(getApiUrl('/api/Report/create-visualization'), requestData);
       
       if (response.data) {
         alert('Отчет успешно создан!');

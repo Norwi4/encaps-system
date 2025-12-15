@@ -1,9 +1,10 @@
 # Многоэтапная сборка для React приложения
 FROM node:18-alpine AS build
 
-# Принимаем API URL как build argument
+# Принимаем API URL как build argument (по умолчанию пустая строка для относительных путей)
 ARG REACT_APP_API_URL
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
+# Устанавливаем переменную окружения (если не передана, будет пустая строка)
+ENV REACT_APP_API_URL=${REACT_APP_API_URL:-}
 
 # Устанавливаем рабочую директорию
 WORKDIR /app
@@ -11,8 +12,8 @@ WORKDIR /app
 # Копируем package.json и package-lock.json
 COPY package*.json ./
 
-# Устанавливаем зависимости
-RUN npm ci --only=production
+# Устанавливаем зависимости (включая dev-зависимости для сборки)
+RUN npm ci
 
 # Копируем исходный код
 COPY . .

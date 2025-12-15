@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5165';
+import { getApiUrl } from '../config';
 
 const Reports = () => {
     const [reports, setReports] = useState([]);
@@ -37,7 +37,7 @@ const Reports = () => {
         setLoading(true);
         try {
             console.log('Отправляем параметры:', { sortBy, sortOrder, startDate, endDate });
-            const response = await axios.get(`${API_URL}/api/Report/list`, {
+            const response = await axios.get(getApiUrl('/api/Report/list'), {
                 params: {
                     sortBy,
                     sortOrder,
@@ -99,7 +99,7 @@ const Reports = () => {
 
     const handleDownload = async (reportId) => {
         try {
-            const response = await axios.get(`${API_URL}/api/Report/download/${reportId}`, {
+            const response = await axios.get(getApiUrl(`/api/Report/download/${reportId}`), {
                 responseType: 'blob'
             });
             

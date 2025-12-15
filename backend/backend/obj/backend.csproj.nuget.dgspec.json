@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\abaev\\Desktop\\kostya\\backend\\backend\\backend.csproj": {}
+    "C:\\Users\\Константин\\Desktop\\encaps-system\\backend\\backend\\backend.csproj": {}
   },
   "projects": {
-    "C:\\Users\\abaev\\Desktop\\kostya\\backend\\backend\\backend.csproj": {
+    "C:\\Users\\Константин\\Desktop\\encaps-system\\backend\\backend\\backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\abaev\\Desktop\\kostya\\backend\\backend\\backend.csproj",
+        "projectUniqueName": "C:\\Users\\Константин\\Desktop\\encaps-system\\backend\\backend\\backend.csproj",
         "projectName": "backend",
-        "projectPath": "C:\\Users\\abaev\\Desktop\\kostya\\backend\\backend\\backend.csproj",
-        "packagesPath": "C:\\Users\\abaev\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\abaev\\Desktop\\kostya\\backend\\backend\\obj\\",
+        "projectPath": "C:\\Users\\Константин\\Desktop\\encaps-system\\backend\\backend\\backend.csproj",
+        "packagesPath": "C:\\Users\\Константин\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Константин\\Desktop\\encaps-system\\backend\\backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\abaev\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\Константин\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"

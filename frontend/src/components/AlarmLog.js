@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5165';
+import { getApiUrl } from '../config';
 
 function AlarmLog() {
   const [events, setEvents] = useState([]);
@@ -21,7 +20,7 @@ function AlarmLog() {
 
   const fetchObjects = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/Event/objects`);
+      const response = await axios.get(getApiUrl('/api/Event/objects'));
       setObjects(response.data);
     } catch (error) {
       console.error('Error fetching objects:', error);
@@ -44,7 +43,7 @@ function AlarmLog() {
         endDate: filters.endDate ? new Date(filters.endDate) : null
       };
 
-      const response = await axios.post(`${API_URL}/api/Event/alarms`, requestData);
+      const response = await axios.post(getApiUrl('/api/Event/alarms'), requestData);
       setEvents(response.data.events || []);
     } catch (error) {
       console.error('Error fetching alarms:', error);

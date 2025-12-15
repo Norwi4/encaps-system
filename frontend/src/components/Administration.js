@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Edit, Trash2, Plus } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import { getApiUrl } from '../config';
 
 function Administration() {
   const [users, setUsers] = useState([]);
@@ -31,7 +31,7 @@ function Administration() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/Admin/users`);
+      const response = await axios.get(getApiUrl('/api/Admin/users'));
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -69,7 +69,7 @@ function Administration() {
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/Admin/roles`);
+      const response = await axios.get(getApiUrl('/api/Admin/roles'));
       setRoles(response.data);
     } catch (error) {
       console.error('Error fetching roles:', error);
@@ -109,11 +109,11 @@ function Administration() {
     try {
       if (editingUser) {
         // Обновление пользователя
-        await axios.put(`${API_URL}/api/Admin/users/${editingUser.id}`, formData);
+        await axios.put(getApiUrl(`/api/Admin/users/${editingUser.id}`), formData);
         setEditingUser(null);
       } else {
         // Создание нового пользователя
-        await axios.post(`${API_URL}/api/Admin/users`, formData);
+        await axios.post(getApiUrl('/api/Admin/users'), formData);
       }
       
       resetForm();
@@ -141,7 +141,7 @@ function Administration() {
   const handleDelete = async (userId) => {
     if (window.confirm('Вы уверены, что хотите удалить этого пользователя?')) {
       try {
-        await axios.delete(`${API_URL}/api/Admin/users/${userId}`);
+        await axios.delete(getApiUrl(`/api/Admin/users/${userId}`));
         fetchUsers();
       } catch (error) {
         console.error('Error deleting user:', error);

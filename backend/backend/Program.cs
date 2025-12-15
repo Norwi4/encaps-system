@@ -49,7 +49,15 @@ app.MapHub<NotificationHub>("/notificationHub");
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+// Отключаем HTTPS redirect в Docker окружении
+if (!app.Environment.IsDevelopment())
+{
+    // В Production через Docker обычно используется HTTP
+}
+else
+{
+    app.UseHttpsRedirection();
+}
 app.MapControllers();
 
 app.Run();

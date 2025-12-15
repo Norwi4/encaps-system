@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5165';
+import { getApiUrl } from '../config';
 
 const UserActionsLog = () => {
     const [userActions, setUserActions] = useState([]);
@@ -24,7 +24,7 @@ const UserActionsLog = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/UserActions/users`);
+            const response = await axios.get(getApiUrl('/api/UserActions/users'));
             setUsers(response.data);
         } catch (error) {
             console.error('Error fetching users:', error);
@@ -39,7 +39,7 @@ const UserActionsLog = () => {
 
     const fetchActions = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/UserActions/actions`);
+            const response = await axios.get(getApiUrl('/api/UserActions/actions'));
             setActions(response.data);
         } catch (error) {
             console.error('Error fetching actions:', error);
@@ -65,7 +65,7 @@ const UserActionsLog = () => {
                 endDate: filters.endDate ? new Date(filters.endDate) : null
             };
 
-            const response = await axios.post(`${API_URL}/api/UserActions/log`, requestData);
+            const response = await axios.post(getApiUrl('/api/UserActions/log'), requestData);
             setUserActions(response.data.userActions || []);
         } catch (error) {
             console.error('Error fetching user actions:', error);

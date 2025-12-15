@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as signalR from '@microsoft/signalr';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import { getApiUrl, getSignalRUrl } from '../config';
 
 const NotificationsPanel = () => {
   const [notifications, setNotifications] = useState([]);
@@ -12,7 +12,7 @@ const NotificationsPanel = () => {
   useEffect(() => {
     // Создаем подключение к SignalR
     const newConnection = new signalR.HubConnectionBuilder()
-        .withUrl(`${API_URL}/notificationHub`, {
+        .withUrl(getSignalRUrl(), {
           withCredentials: true
         })
         .withAutomaticReconnect()
@@ -89,7 +89,7 @@ const NotificationsPanel = () => {
 
   const loadRecentActions = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/UserActions/log`, {
+      const response = await fetch(getApiUrl('/api/UserActions/log'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ const NotificationsPanel = () => {
 
   const loadRecentEvents = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/Event/log`, {
+      const response = await fetch(getApiUrl('/api/Event/log'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

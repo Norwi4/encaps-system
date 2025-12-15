@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import logo from "./icons/logo.svg";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-const API_URL = process.env.REACT_APP_API_URL;
+import { getApiUrl } from "./config";
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -29,7 +28,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API_URL}/api/Auth/login`, { login, password });
+      const response = await axios.post(getApiUrl('/api/Auth/login'), { login, password });
       const user = response.data;
       
       // Сохраняем пользователя с информацией о роли
@@ -37,7 +36,7 @@ function Login() {
       
       // Создаем запись о входе в систему
       try {
-        await axios.post(`${API_URL}/api/UserActions/create`, {
+        await axios.post(getApiUrl('/api/UserActions/create'), {
           UserId: user.id,
           ActionId: 3, // ID действия "Вход в систему"
           Description: `Пользователь ${user.name} ${user.surname} вошел в систему`

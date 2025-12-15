@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import axios from 'axios';
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5165';
+import { getApiUrl, getSignalRUrl } from '../config';
 
 // Функция для преобразования названий параметров в читаемый вид
 const getParameterDisplayName = (paramName) => {
@@ -202,7 +202,7 @@ function DeviceAccounting() {
   // SignalR подключение
   useEffect(() => {
     const newConnection = new HubConnectionBuilder()
-      .withUrl(`${API_URL}/notificationHub`)
+      .withUrl(getSignalRUrl())
       .configureLogging(LogLevel.Information)
       .build();
 
@@ -341,7 +341,7 @@ function DeviceAccounting() {
 
   const fetchDevices = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/Device/dashboard`);
+      const response = await axios.get(getApiUrl('/api/Device/dashboard'));
       // Сохраняем объекты и сортируем по ID для стабильности
       const sortedObjects = (response.data.objects || []).sort((a, b) => a.id - b.id);
       setObjects(sortedObjects);
@@ -407,7 +407,7 @@ function DeviceAccounting() {
   const handleDeviceClick = async (deviceId) => {
     setLoadingDevice(true);
     try {
-      const response = await axios.get(`${API_URL}/api/Device/device/${deviceId}/details`);
+      const response = await axios.get(getApiUrl(`/api/Device/device/${deviceId}/details`));
       
       // Устанавливаем состояние
       setSelectedDevice(response.data);
