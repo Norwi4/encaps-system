@@ -10,7 +10,7 @@ const menu = [
   { label: "Объекты и счетчики", icon: <Link className="w-4 h-4" /> },
 ];
 
-const API_URL = process.env.REACT_APP_API_URL || '';
+const API_URL = process.env.REACT_APP_API_URL;
 
 function Settings() {
   const navigate = useNavigate();

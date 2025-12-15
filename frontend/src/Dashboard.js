@@ -20,7 +20,7 @@ import UserActionsLog from "./components/UserActionsLog";
 import Reports from "./components/Reports";
 import NotificationsPanel from "./components/NotificationsPanel";
 
-const API_URL = process.env.REACT_APP_API_URL || '';
+const API_URL = process.env.REACT_APP_API_URL;
 
 function Dashboard() {
   const [metrics, setMetrics] = useState({

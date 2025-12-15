@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   backend:
     build:
@@ -21,10 +23,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_URL: ""  # Пустая строка для проксирования через nginx
+        REACT_APP_API_URL: http://192.168.20.57:5000  # Прямое обращение к API
     container_name: encaps_frontend
     ports:
-      - "3000:80"  # Публикуем порт 80 контейнера на порт 3000 хоста (nginx слушает на 80)
+      - "3000:3000"  # Публикуем порт 3000 на хосте
     depends_on:
       - backend  # Ждем запуска бэкенда
     networks:
