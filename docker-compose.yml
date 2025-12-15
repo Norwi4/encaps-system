@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: ./backend/backend
+      dockerfile: Dockerfile
+    container_name: encaps_backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://0.0.0.0:5000  # Слушаем все интерфейсы
+      - TZ=Europe/Moscow
+    ports:
+      - "5000:5000"  # Публикуем порт 5000 на хосте
+    volumes:
+      - ./backend/backend/Reports:/app/Reports  # Монтируем папку с отчетами
+      - /etc/localtime:/etc/localtime:ro  # Синхронизируем время
+    networks:
+      - encaps_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ""  # Пустая строка для проксирования через nginx
+    container_name: encaps_frontend
+    ports:
+      - "3000:80"  # Публикуем порт 80 контейнера на порт 3000 хоста (nginx слушает на 80)
+    depends_on:
+      - backend  # Ждем запуска бэкенда
+    networks:
+      - encaps_network
+
+networks:
+  encaps_network:
+    driver: bridge
+
