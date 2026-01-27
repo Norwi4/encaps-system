@@ -237,9 +237,20 @@ namespace backend.Controllers
                     return NotFound(new { message = "Пользователь не найден" });
                 }
 
+                // Удаляем действия пользователя
+                var userActions = await _context.UserActions.Where(ua => ua.UserId == id).ToListAsync();
+                _context.UserActions.RemoveRange(userActions);
+
                 // Удаляем роли пользователя
                 var userRoles = await _context.UserRoles.Where(ur => ur.UserId == id).ToListAsync();
                 _context.UserRoles.RemoveRange(userRoles);
+
+                // Обновляем created_by_user_id в Reports на NULL (если есть такие записи)
+                var reports = await _context.Reports.Where(r => r.CreatedByUserId == id).ToListAsync();
+                foreach (var report in reports)
+                {
+                    report.CreatedByUserId = null;
+                }
 
                 // Удаляем пользователя
                 _context.Users.Remove(user);

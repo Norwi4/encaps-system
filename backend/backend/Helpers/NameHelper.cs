@@ -33,19 +33,28 @@ namespace backend.Helpers
                 "FundPfCf1" => "Коэффициент мощности фазы L1",
                 "FundPfCf2" => "Коэффициент мощности фазы L2",
                 "FundPfCf3" => "Коэффициент мощности фазы L3",
+                "FundPfSum" => "Суммарный коэффициент мощности",
                 "RotationField" => "Вращающееся поле",
                 "RqcL1" => "Реальная потребленная энергия фазы L1",
                 "RqcL2" => "Реальная потребленная энергия фазы L2",
                 "RqcL3" => "Реальная потребленная энергия фазы L3",
+                "RqcSum" => "Суммарная потребленная энергия",
                 "RqdL1" => "Реальная отданная энергия фазы L1",
                 "RqdL2" => "Реальная отданная энергия фазы L2",
                 "RqdL3" => "Реальная отданная энергия фазы L3",
+                "RqdSum" => "Суммарная отданная энергия",
                 "ReactQIL1" => "Реактивная индуктивная энергия фазы L1",
                 "ReactQIL2" => "Реактивная индуктивная энергия фазы L2",
                 "ReactQIL3" => "Реактивная индуктивная энергия фазы L3",
+                "ReactQISum" => "Суммарная реактивная индуктивная энергия",
                 "ReactQCL1" => "Реактивная емкостная энергия фазы L1",
                 "ReactQCL2" => "Реактивная емкостная энергия фазы L2",
                 "ReactQCL3" => "Реактивная емкостная энергия фазы L3",
+                "ReactQCSum" => "Суммарная реактивная емкостная энергия",
+                "ReactQL1" => "Реактивная энергия фазы L1",
+                "ReactQL2" => "Реактивная энергия фазы L2",
+                "ReactQL3" => "Реактивная энергия фазы L3",
+                "ReactQSum" => "Суммарная реактивная энергия",
                 "HUL1" => "Гармоники THD напряжения фазы L1",
                 "HUL2" => "Гармоники THD напряжения фазы L2",
                 "HUL3" => "Гармоники THD напряжения фазы L3",
@@ -56,6 +65,7 @@ namespace backend.Helpers
                 "Angle2" => "Угол между фазными напряжениями 2",
                 "Angle3" => "Угол между фазными напряжениями 3",
                 "AllEnergyK" => "Накопленная энергия с учетом коэффициента трансформации",
+                "AllEnergyRK" => "Реактивная энергия от сброса",
                 _ => parameterName
             };
         }
@@ -91,19 +101,28 @@ namespace backend.Helpers
                 "FundPfCf1" => "cos φ L1",
                 "FundPfCf2" => "cos φ L2",
                 "FundPfCf3" => "cos φ L3",
+                "FundPfSum" => "cos φ Σ",
                 "RotationField" => "Вращ. поле",
                 "RqcL1" => "Энергия потр. L1",
                 "RqcL2" => "Энергия потр. L2",
                 "RqcL3" => "Энергия потр. L3",
+                "RqcSum" => "Энергия потр. Σ",
                 "RqdL1" => "Энергия отд. L1",
                 "RqdL2" => "Энергия отд. L2",
                 "RqdL3" => "Энергия отд. L3",
+                "RqdSum" => "Энергия отд. Σ",
                 "ReactQIL1" => "Q инд. L1",
                 "ReactQIL2" => "Q инд. L2",
                 "ReactQIL3" => "Q инд. L3",
+                "ReactQISum" => "Q инд. Σ",
                 "ReactQCL1" => "Q емк. L1",
                 "ReactQCL2" => "Q емк. L2",
                 "ReactQCL3" => "Q емк. L3",
+                "ReactQCSum" => "Q емк. Σ",
+                "ReactQL1" => "Q L1",
+                "ReactQL2" => "Q L2",
+                "ReactQL3" => "Q L3",
+                "ReactQSum" => "Q Σ",
                 "HUL1" => "THD U L1",
                 "HUL2" => "THD U L2",
                 "HUL3" => "THD U L3",
@@ -114,6 +133,7 @@ namespace backend.Helpers
                 "Angle2" => "Угол 2",
                 "Angle3" => "Угол 3",
                 "AllEnergyK" => "Энергия с коэф.",
+                "AllEnergyRK" => "Реактивная энергия от сброса",
                 _ => parameterName
             };
         }
@@ -156,27 +176,39 @@ namespace backend.Helpers
                 // Активная энергия - кВт⋅ч, 0 знаков после запятой
                 "AllEnergy" => "кВт⋅ч",
                 "AllEnergyK" => "кВт⋅ч",
+                
+                // Реактивная энергия от сброса - кВар⋅ч, 0 знаков после запятой
+                "AllEnergyRK" => "кВар⋅ч",
                 "RqcL1" => "кВт⋅ч",
                 "RqcL2" => "кВт⋅ч",
                 "RqcL3" => "кВт⋅ч",
+                "RqcSum" => "кВт⋅ч",
                 "RqdL1" => "кВт⋅ч",
                 "RqdL2" => "кВт⋅ч",
                 "RqdL3" => "кВт⋅ч",
+                "RqdSum" => "кВт⋅ч",
                 
                 // Реактивная энергия - кВар⋅ч, 0 знаков после запятой
                 "ReactiveEnergySum" => "кВар⋅ч",
                 "ReactQIL1" => "кВар⋅ч",
                 "ReactQIL2" => "кВар⋅ч",
                 "ReactQIL3" => "кВар⋅ч",
+                "ReactQISum" => "кВар⋅ч",
                 "ReactQCL1" => "кВар⋅ч",
                 "ReactQCL2" => "кВар⋅ч",
                 "ReactQCL3" => "кВар⋅ч",
+                "ReactQCSum" => "кВар⋅ч",
+                "ReactQL1" => "кВар⋅ч",
+                "ReactQL2" => "кВар⋅ч",
+                "ReactQL3" => "кВар⋅ч",
+                "ReactQSum" => "кВар⋅ч",
                 
                 // Остальные параметры
                 "Freq" => "Гц",
                 "FundPfCf1" => "",
                 "FundPfCf2" => "",
                 "FundPfCf3" => "",
+                "FundPfSum" => "",
                 "RotationField" => "",
                 "HUL1" => "%",
                 "HUL2" => "%",
@@ -211,9 +243,11 @@ namespace backend.Helpers
                 "Aq1" or "Aq2" or "Aq3" or "AqSum" => 1,
                 
                 // Энергии - 0 знаков после запятой
-                "AllEnergy" or "AllEnergyK" or "ReactiveEnergySum" or
-                "RqcL1" or "RqcL2" or "RqcL3" or "RqdL1" or "RqdL2" or "RqdL3" or
-                "ReactQIL1" or "ReactQIL2" or "ReactQIL3" or "ReactQCL1" or "ReactQCL2" or "ReactQCL3" => 0,
+                "AllEnergy" or "AllEnergyK" or "AllEnergyRK" or "ReactiveEnergySum" or
+                "RqcL1" or "RqcL2" or "RqcL3" or "RqcSum" or "RqdL1" or "RqdL2" or "RqdL3" or "RqdSum" or
+                "ReactQIL1" or "ReactQIL2" or "ReactQIL3" or "ReactQISum" or
+                "ReactQCL1" or "ReactQCL2" or "ReactQCL3" or "ReactQCSum" or
+                "ReactQL1" or "ReactQL2" or "ReactQL3" or "ReactQSum" => 0,
                 
                 // Остальные параметры - 2 знака после запятой
                 _ => 2
@@ -230,9 +264,11 @@ namespace backend.Helpers
                 "Aq1" or "Aq2" or "Aq3" or "AqSum" => value,
                 
                 // Энергии - делим на 1000 для перевода в кВт⋅ч/кВар⋅ч
-                "AllEnergy" or "AllEnergyK" or "ReactiveEnergySum" or
-                "RqcL1" or "RqcL2" or "RqcL3" or "RqdL1" or "RqdL2" or "RqdL3" or
-                "ReactQIL1" or "ReactQIL2" or "ReactQIL3" or "ReactQCL1" or "ReactQCL2" or "ReactQCL3" => value,
+                "AllEnergy" or "AllEnergyK" or "AllEnergyRK" or "ReactiveEnergySum" or
+                "RqcL1" or "RqcL2" or "RqcL3" or "RqcSum" or "RqdL1" or "RqdL2" or "RqdL3" or "RqdSum" or
+                "ReactQIL1" or "ReactQIL2" or "ReactQIL3" or "ReactQISum" or
+                "ReactQCL1" or "ReactQCL2" or "ReactQCL3" or "ReactQCSum" or
+                "ReactQL1" or "ReactQL2" or "ReactQL3" or "ReactQSum" => value,
                 
                 // Остальные параметры - без изменений
                 _ => value

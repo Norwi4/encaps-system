@@ -62,7 +62,7 @@ namespace backend.Controllers
                     // Расход за текущий месяц (из таблицы consumption_by_day с начала месяца по вчера)
                     MonthlyConsumption = GetConsumptionForPeriod(sites, "month", monthStart, yesterdayEnd, gasSites),
                     
-                    // Расход за день (из consumption_by_today для электричества, из consumption_by_day для газа)
+                    // Расход за день (из consumption_by_today для электричества и газа)
                     DailyConsumption = GetConsumptionForPeriod(sites, "today", todayStart, now, gasSites),
                     
                     // Расход за вчера (из consumption_by_day)
@@ -214,18 +214,28 @@ namespace backend.Controllers
                     }
                     else if (periodType == "today")
                     {
-                        var now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
-                        var todayStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, now.Day, 0, 0, 0), DateTimeKind.Utc);
+                        try
+                        {
+                            var now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
+                            var todayStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, now.Day, 0, 0, 0), DateTimeKind.Utc);
+                            var todayEnd = todayStart.AddDays(1).AddSeconds(-1); // Конец сегодняшнего дня (23:59:59)
 
-                        var lastValue = _context.ConsumptionByToday
-                            .Where(c => c.DeviceId == deviceId && 
-                                        c.Dt >= todayStart && 
-                                        c.Dt <= now)
-                            .OrderByDescending(c => c.Dt)
-                            .Select(c => c.Value)
-                            .FirstOrDefault();
+                            // Берем последнее значение за сегодня, даже если оно было несколько часов назад
+                            var lastValue = _context.ConsumptionByToday
+                                .Where(c => c.DeviceId == deviceId && 
+                                            c.Dt >= todayStart && 
+                                            c.Dt <= todayEnd)
+                                .OrderByDescending(c => c.Dt)
+                                .Select(c => c.Value)
+                                .FirstOrDefault();
 
-                        value = lastValue;
+                            value = lastValue;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error getting today consumption for device {deviceId}: {ex.Message}");
+                            value = 0;
+                        }
                     }
 
                     totalValue += value;
@@ -267,16 +277,30 @@ namespace backend.Controllers
                     }
                     else if (periodType == "today")
                     {
-                        // Для сегодня суммируем данные из consumption_by_day за текущий день (от 00:00)
+                        // Для сегодня берем последнее значение из consumption_by_today (как для электричества)
                         foreach (var gasDeviceId in gasSites[site.Key])
                         {
-                            var now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
-                            var today = DateOnly.FromDateTime(now);
-                            
-                            gasValue += _context.ConsumptionByDay
-                                .Where(c => c.DeviceId == gasDeviceId && 
-                                            c.Dt == today)
-                                .Sum(c => c.Value);
+                            try
+                            {
+                                var now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
+                                var todayStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, now.Day, 0, 0, 0), DateTimeKind.Utc);
+                                var todayEnd = todayStart.AddDays(1).AddSeconds(-1); // Конец сегодняшнего дня (23:59:59)
+
+                                // Берем последнее значение за сегодня, даже если оно было несколько часов назад
+                                var lastGasValue = _context.ConsumptionByToday
+                                    .Where(c => c.DeviceId == gasDeviceId && 
+                                                c.Dt >= todayStart && 
+                                                c.Dt <= todayEnd)
+                                    .OrderByDescending(c => c.Dt)
+                                    .Select(c => c.Value)
+                                    .FirstOrDefault();
+                                
+                                gasValue += lastGasValue;
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error getting today gas consumption for device {gasDeviceId}: {ex.Message}");
+                            }
                         }
                     }
                 }

@@ -22,6 +22,20 @@ import NotificationsPanel from "./components/NotificationsPanel";
 
 import { getApiUrl, getSignalRUrl } from "./config";
 
+// Функция для форматирования чисел - убирает .00 если дробная часть равна нулю
+const formatNumber = (value) => {
+  if (value === undefined || value === null) return '0';
+  const num = typeof value === 'number' ? value : parseFloat(value);
+  if (isNaN(num)) return '0';
+  // Преобразуем в строку и убираем лишние нули в конце
+  const str = num.toString();
+  // Если есть точка и после неё только нули, убираем их
+  if (str.includes('.')) {
+    return str.replace(/\.?0+$/, '');
+  }
+  return str;
+};
+
 function Dashboard() {
   const [metrics, setMetrics] = useState({
     previousMonthConsumption: [],
@@ -42,7 +56,13 @@ function Dashboard() {
       console.log('Previous month consumption:', res.data.previousMonthConsumption);
       console.log('Monthly consumption:', res.data.monthlyConsumption);
       console.log('Daily consumption:', res.data.dailyConsumption);
-      console.log('Daily consumption gas data:', res.data.dailyConsumption?.map(s => ({ name: s.siteName, gas: s.gasConsumption })));
+      console.log('Daily consumption gas data:', res.data.dailyConsumption?.map(s => ({ name: s.siteName, gas: s.gasConsumption, electricity: s.electricityConsumption })));
+      // Детальная проверка данных по газу за день
+      const gasSites = res.data.dailyConsumption?.filter(s => ['КВТ-Юг', 'КВТ-Восток', 'КВТ-Север'].includes(s.siteName));
+      console.log('Gas sites for today:', gasSites);
+      gasSites?.forEach(site => {
+        console.log(`Site: ${site.siteName}, Gas: ${site.gasConsumption}, Type: ${typeof site.gasConsumption}`);
+      });
       console.log('Previous day consumption:', res.data.previousDayConsumption);
       console.log('================================');
       setMetrics(res.data);
@@ -197,7 +217,7 @@ function Dashboard() {
                         <option value="">Выберите объект</option>
                         {metrics.previousMonthConsumption?.map((site, index) => (
                           <option key={index} value={site.siteName}>
-                            {site.siteName}: ⚡{site.electricityConsumption}
+                            {site.siteName}: ⚡{formatNumber(site.electricityConsumption)}
                           </option>
                         ))}
                       </select>
@@ -224,7 +244,7 @@ function Dashboard() {
                         <option value="">Выберите объект</option>
                         {metrics.monthlyConsumption?.map((site, index) => (
                           <option key={index} value={site.siteName}>
-                            {site.siteName}: ⚡{site.electricityConsumption}
+                            {site.siteName}: ⚡{formatNumber(site.electricityConsumption)}
                           </option>
                         ))}
                       </select>
@@ -251,7 +271,7 @@ function Dashboard() {
                         <option value="">Выберите объект</option>
                         {metrics.dailyConsumption?.map((site, index) => (
                           <option key={index} value={site.siteName}>
-                            {site.siteName}: ⚡{site.electricityConsumption}
+                            {site.siteName}: ⚡{formatNumber(site.electricityConsumption)}
                           </option>
                         ))}
                       </select>
@@ -278,7 +298,7 @@ function Dashboard() {
                         <option value="">Выберите объект</option>
                         {metrics.previousDayConsumption?.map((site, index) => (
                           <option key={index} value={site.siteName}>
-                            {site.siteName}: ⚡{site.electricityConsumption}
+                            {site.siteName}: ⚡{formatNumber(site.electricityConsumption)}
                           </option>
                         ))}
                       </select>
@@ -307,7 +327,7 @@ function Dashboard() {
                         <option value="">Выберите объект</option>
                         {metrics.previousMonthConsumption?.filter(site => ['КВТ-Юг', 'КВТ-Восток', 'КВТ-Север'].includes(site.siteName)).map((site, index) => (
                           <option key={index} value={site.siteName}>
-                            {site.siteName}: 🔥{site.gasConsumption}
+                            {site.siteName}: 🔥{formatNumber(site.gasConsumption)}
                           </option>
                         ))}
                       </select>
@@ -334,7 +354,7 @@ function Dashboard() {
                         <option value="">Выберите объект</option>
                         {metrics.monthlyConsumption?.filter(site => ['КВТ-Юг', 'КВТ-Восток', 'КВТ-Север'].includes(site.siteName)).map((site, index) => (
                           <option key={index} value={site.siteName}>
-                            {site.siteName}: 🔥{site.gasConsumption}
+                            {site.siteName}: 🔥{formatNumber(site.gasConsumption)}
                           </option>
                         ))}
                       </select>
@@ -361,7 +381,7 @@ function Dashboard() {
                         <option value="">Выберите объект</option>
                         {metrics.dailyConsumption?.filter(site => ['КВТ-Юг', 'КВТ-Восток', 'КВТ-Север'].includes(site.siteName)).map((site, index) => (
                           <option key={index} value={site.siteName}>
-                            {site.siteName}: 🔥{site.gasConsumption || 0}
+                            {site.siteName}: 🔥{formatNumber(site.gasConsumption)}
                           </option>
                         ))}
                       </select>
@@ -388,7 +408,7 @@ function Dashboard() {
                         <option value="">Выберите объект</option>
                         {metrics.previousDayConsumption?.filter(site => ['КВТ-Юг', 'КВТ-Восток', 'КВТ-Север'].includes(site.siteName)).map((site, index) => (
                           <option key={index} value={site.siteName}>
-                            {site.siteName}: 🔥{site.gasConsumption}
+                            {site.siteName}: 🔥{formatNumber(site.gasConsumption)}
                           </option>
                         ))}
                       </select>

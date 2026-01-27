@@ -50,10 +50,23 @@ public class MonthlyConsumptionUpdateService : BackgroundService
                 // Проверяем каждую минуту
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
+            catch (OperationCanceledException)
+            {
+                // Нормальная остановка сервиса
+                _logger.LogInformation("MonthlyConsumptionUpdateService is being cancelled.");
+                break;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка в MonthlyConsumptionUpdateService");
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
             }
         }
 

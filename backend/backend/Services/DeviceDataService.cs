@@ -50,28 +50,38 @@ public class DeviceDataService : IDeviceDataService
                 List<string> allowedParameters = new List<string>();
                 bool isMercuryDevice = false;
                 
-                if (device.Vendor.HasValue)
+                // Сначала пытаемся найти по Model (если Model указывает на VendorModel.Id)
+                VendorModel? vendorModel = null;
+                if (device.Model.HasValue)
+                {
+                    vendorModel = await _context.VendorModels
+                        .FirstOrDefaultAsync(vm => vm.Id == device.Model.Value);
+                }
+                
+                // Если не нашли по Model, ищем по VendorId
+                if (vendorModel == null && device.Vendor.HasValue)
                 {
                     var vendor = await _context.Vendors
                         .FirstOrDefaultAsync(v => v.Id == device.Vendor.Value);
                     
-                // Проверяем, является ли устройство счетчиком Меркурий
-                if (vendor != null && vendor.Name != null && 
-                    (vendor.Name.Contains("Меркурий", StringComparison.OrdinalIgnoreCase) || 
-                     vendor.Name.Contains("Mercury", StringComparison.OrdinalIgnoreCase)))
-                {
-                    isMercuryDevice = true;
-                    _logger.LogInformation($"🔍 Device {device.Id} identified as Mercury device (Vendor: {vendor.Name})");
-                }
-                    
-                    var vendorModel = await _context.VendorModels
-                        .FirstOrDefaultAsync(vm => vm.VendorId == device.Vendor.Value);
-                    
-                    if (vendorModel != null)
+                    // Проверяем, является ли устройство счетчиком Меркурий
+                    if (vendor != null && vendor.Name != null && 
+                        (vendor.Name.Contains("Меркурий", StringComparison.OrdinalIgnoreCase) || 
+                         vendor.Name.Contains("Mercury", StringComparison.OrdinalIgnoreCase)))
                     {
-                        plateInfo = PlateInfoHelper.ParsePlateInfo(vendorModel.PlateInfo);
-                        allowedParameters = PlateInfoHelper.GetFilteredParameters(plateInfo);
+                        isMercuryDevice = true;
+                        _logger.LogInformation($"🔍 Device {device.Id} identified as Mercury device (Vendor: {vendor.Name})");
                     }
+                    
+                    vendorModel = await _context.VendorModels
+                        .FirstOrDefaultAsync(vm => vm.VendorId == device.Vendor.Value);
+                }
+                
+                if (vendorModel != null && !string.IsNullOrEmpty(vendorModel.PlateInfo))
+                {
+                    plateInfo = PlateInfoHelper.ParsePlateInfo(vendorModel.PlateInfo);
+                    allowedParameters = PlateInfoHelper.GetFilteredParameters(plateInfo);
+                    _logger.LogInformation($"📋 Device {device.Id}: Found VendorModel (Id={vendorModel.Id}), parsed {allowedParameters.Count} parameters from plate_info");
                 }
 
                 var deviceParameters = new List<object>();
@@ -92,29 +102,53 @@ public class DeviceDataService : IDeviceDataService
                             foreach (var columnName in allowedParameters)
                             {
                                 var prop = PlateInfoHelper.GetPropertyInfo<ElectricityDeviceDatum>(columnName);
+                                var plateInfoField = plateInfo?.GetValueOrDefault(columnName);
+                                
+                                // Если свойство найдено, получаем значение
+                                decimal? decimalValue = null;
                                 if (prop != null)
                                 {
                                     var value = prop.GetValue(latestDatum);
-                                    if (value != null && value is decimal decimalValue)
+                                    if (value != null)
                                     {
-                                        var plateInfoField = plateInfo?.GetValueOrDefault(columnName);
-                                        var displayName = NameHelper.GetParameterFullName(prop.Name);
-                                        var shortName = NameHelper.GetParameterShortName(prop.Name);
-                                        var digits = NameHelper.GetParameterDecimalPlaces(prop.Name);
-                                        
-                                        // Конвертируем значение для отображения (делим на 1000 для мощностей и энергий)
-                                        var displayValue = NameHelper.ConvertToDisplayValue(decimalValue, prop.Name);
-                                        
-                                        deviceParameters.Add(new
-                                        {
-                                            parameterName = displayName,
-                                            parameterShortName = shortName,
-                                            parameterCode = prop.Name,
-                                            value = Math.Round(Convert.ToDouble(displayValue), digits),
-                                            unit = NameHelper.GetParameterUnit(prop.Name),
-                                            hasValue = true
-                                        });
+                                        if (value is decimal dec)
+                                            decimalValue = dec;
+                                        else
+                                            decimalValue = value as decimal?;
                                     }
+                                }
+                                
+                                // Добавляем параметр если:
+                                // 1. Есть значение ИЛИ
+                                // 2. Есть plateInfoField (даже если свойство не найдено или значение null)
+                                if (decimalValue.HasValue || plateInfoField != null)
+                                {
+                                    // Используем Label из plate_info для FullName, если он есть
+                                    var displayName = !string.IsNullOrEmpty(plateInfoField?.Label) 
+                                        ? plateInfoField.Label 
+                                        : (prop != null ? NameHelper.GetParameterFullName(prop.Name) : columnName);
+                                    // ShortName остается стандартным
+                                    var shortName = prop != null 
+                                        ? NameHelper.GetParameterShortName(prop.Name) 
+                                        : columnName;
+                                    var digits = int.TryParse(plateInfoField?.Digit, out var digitCount) 
+                                        ? digitCount 
+                                        : (prop != null ? NameHelper.GetParameterDecimalPlaces(prop.Name) : 2);
+                                    
+                                    // Конвертируем значение для отображения (делим на 1000 для мощностей и энергий)
+                                    var displayValue = decimalValue.HasValue 
+                                        ? NameHelper.ConvertToDisplayValue(decimalValue.Value, prop?.Name ?? columnName)
+                                        : 0;
+                                    
+                                    deviceParameters.Add(new
+                                    {
+                                        parameterName = displayName,
+                                        parameterShortName = shortName,
+                                        parameterCode = prop?.Name ?? columnName,
+                                        value = Math.Round(Convert.ToDouble(displayValue), digits),
+                                        unit = prop != null ? NameHelper.GetParameterUnit(prop.Name) : "",
+                                        hasValue = decimalValue.HasValue
+                                    });
                                 }
                             }
                         }
@@ -171,29 +205,53 @@ public class DeviceDataService : IDeviceDataService
                             foreach (var columnName in allowedParameters)
                             {
                                 var prop = PlateInfoHelper.GetPropertyInfo<GasDeviceDatum>(columnName);
+                                var plateInfoField = plateInfo?.GetValueOrDefault(columnName);
+                                
+                                // Если свойство найдено, получаем значение
+                                decimal? decimalValue = null;
                                 if (prop != null)
                                 {
                                     var value = prop.GetValue(latestDatum);
-                                    if (value != null && value is decimal decimalValue)
+                                    if (value != null)
                                     {
-                                        var plateInfoField = plateInfo?.GetValueOrDefault(columnName);
-                                        var displayName = NameHelper.GetParameterFullName(prop.Name);
-                                        var shortName = NameHelper.GetParameterShortName(prop.Name);
-                                        var digits = NameHelper.GetParameterDecimalPlaces(prop.Name);
-                                        
-                                        // Конвертируем значение для отображения (делим на 1000 для мощностей и энергий)
-                                        var displayValue = NameHelper.ConvertToDisplayValue(decimalValue, prop.Name);
-                                        
-                                        deviceParameters.Add(new
-                                        {
-                                            parameterName = displayName,
-                                            parameterShortName = shortName,
-                                            parameterCode = prop.Name,
-                                            value = Math.Round(Convert.ToDouble(displayValue), digits),
-                                            unit = NameHelper.GetParameterUnit(prop.Name),
-                                            hasValue = true
-                                        });
+                                        if (value is decimal dec)
+                                            decimalValue = dec;
+                                        else
+                                            decimalValue = value as decimal?;
                                     }
+                                }
+                                
+                                // Добавляем параметр если:
+                                // 1. Есть значение ИЛИ
+                                // 2. Есть plateInfoField (даже если свойство не найдено или значение null)
+                                if (decimalValue.HasValue || plateInfoField != null)
+                                {
+                                    // Используем Label из plate_info для FullName, если он есть
+                                    var displayName = !string.IsNullOrEmpty(plateInfoField?.Label) 
+                                        ? plateInfoField.Label 
+                                        : (prop != null ? NameHelper.GetParameterFullName(prop.Name) : columnName);
+                                    // ShortName остается стандартным
+                                    var shortName = prop != null 
+                                        ? NameHelper.GetParameterShortName(prop.Name) 
+                                        : columnName;
+                                    var digits = int.TryParse(plateInfoField?.Digit, out var digitCount) 
+                                        ? digitCount 
+                                        : 2;
+                                    
+                                    // Конвертируем значение для отображения
+                                    var displayValue = decimalValue.HasValue 
+                                        ? NameHelper.ConvertToDisplayValue(decimalValue.Value, prop?.Name ?? columnName)
+                                        : 0;
+                                    
+                                    deviceParameters.Add(new
+                                    {
+                                        parameterName = displayName,
+                                        parameterShortName = shortName,
+                                        parameterCode = prop?.Name ?? columnName,
+                                        value = Math.Round(Convert.ToDouble(displayValue), digits),
+                                        unit = prop != null ? NameHelper.GetParameterUnit(prop.Name) : "",
+                                        hasValue = decimalValue.HasValue
+                                    });
                                 }
                             }
                         }
@@ -380,10 +438,13 @@ public class DeviceDataService : IDeviceDataService
 
                 foreach (var deviceId in site.Value)
                 {
+                    var todayEnd = todayStart.AddDays(1).AddSeconds(-1); // Конец сегодняшнего дня (23:59:59)
+                    
+                    // Берем последнее значение за сегодня, даже если оно было несколько часов назад
                     var value = await _context.ConsumptionByToday
                         .Where(c => c.DeviceId == deviceId && 
                                     c.Dt >= todayStart && 
-                                    c.Dt <= now)
+                                    c.Dt <= todayEnd)
                         .OrderByDescending(c => c.Dt)
                         .Select(c => c.Value)
                         .FirstOrDefaultAsync();

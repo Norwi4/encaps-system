@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -345,6 +345,10 @@ public partial class BmsContext : DbContext
                 .HasDefaultValueSql("0")
                 .HasComment("Накопленная энергия с учетом коэффициента трансформации")
                 .HasColumnName("all_energy_k");
+            entity.Property(e => e.AllEnergyRK)
+                .HasDefaultValueSql("0")
+                .HasComment("Накопленная энергия с учетом коэффициента трансформации (реактивная)")
+                .HasColumnName("all_energy_r_k");
             entity.Property(e => e.Angle1)
                 .HasDefaultValueSql("0")
                 .HasComment("Угол между фазными напряжениями")
@@ -360,15 +364,19 @@ public partial class BmsContext : DbContext
             entity.Property(e => e.Aq1)
                 .HasDefaultValueSql("0")
                 .HasComment("Apparent power L1")
-                .HasColumnName("aq_1");
+                .HasColumnName("s_l1");
             entity.Property(e => e.Aq2)
                 .HasDefaultValueSql("0")
                 .HasComment("Apparent power L2")
-                .HasColumnName("aq_2");
+                .HasColumnName("s_l2");
             entity.Property(e => e.Aq3)
                 .HasDefaultValueSql("0")
                 .HasComment("Apparent power L3")
-                .HasColumnName("aq_3");
+                .HasColumnName("s_l3");
+            entity.Property(e => e.AqSum)
+                .HasDefaultValueSql("0")
+                .HasComment("Apparent power sum")
+                .HasColumnName("s_sum");
             entity.Property(e => e.DeviceId).HasColumnName("device_id");
             entity.Property(e => e.Freq).HasColumnName("freq");
             entity.Property(e => e.FundPfCf1)
@@ -383,6 +391,10 @@ public partial class BmsContext : DbContext
                 .HasDefaultValueSql("0")
                 .HasComment("Fund power factor, CosPhi")
                 .HasColumnName("fund_pf_cf3");
+            entity.Property(e => e.FundPfSum)
+                .HasDefaultValueSql("0")
+                .HasComment("Fund power factor sum")
+                .HasColumnName("fund_pf_sum");
             entity.Property(e => e.HIL1)
                 .HasDefaultValueSql("0")
                 .HasComment("Harmonic THD I")
@@ -440,6 +452,30 @@ public partial class BmsContext : DbContext
                 .HasDefaultValueSql("0")
                 .HasComment("Reaktive energy capacitive")
                 .HasColumnName("react_q_c_l3");
+            entity.Property(e => e.ReactQL1)
+                .HasDefaultValueSql("0")
+                .HasComment("Reactive energy L1")
+                .HasColumnName("react_q_l1");
+            entity.Property(e => e.ReactQL2)
+                .HasDefaultValueSql("0")
+                .HasComment("Reactive energy L2")
+                .HasColumnName("react_q_l2");
+            entity.Property(e => e.ReactQL3)
+                .HasDefaultValueSql("0")
+                .HasComment("Reactive energy L3")
+                .HasColumnName("react_q_l3");
+            entity.Property(e => e.ReactQSum)
+                .HasDefaultValueSql("0")
+                .HasComment("Reactive energy sum")
+                .HasColumnName("react_q_sum");
+            entity.Property(e => e.ReactQISum)
+                .HasDefaultValueSql("0")
+                .HasComment("Reactive energy inductive sum")
+                .HasColumnName("react_q_i_sum");
+            entity.Property(e => e.ReactQCSum)
+                .HasDefaultValueSql("0")
+                .HasComment("Reactive energy capacitive sum")
+                .HasColumnName("react_q_c_sum");
             entity.Property(e => e.ReactQIL1)
                 .HasDefaultValueSql("0")
                 .HasComment("Reaktive energy inductive")
@@ -471,6 +507,10 @@ public partial class BmsContext : DbContext
                 .HasDefaultValueSql("0")
                 .HasComment("Real energy consumed")
                 .HasColumnName("rqc_l3");
+            entity.Property(e => e.RqcSum)
+                .HasDefaultValueSql("0")
+                .HasComment("Real energy consumed sum")
+                .HasColumnName("rqc_sum");
             entity.Property(e => e.RqdL1)
                 .HasDefaultValueSql("0")
                 .HasComment("Real energy delivered")
@@ -483,6 +523,10 @@ public partial class BmsContext : DbContext
                 .HasDefaultValueSql("0")
                 .HasComment("Real energy delivered")
                 .HasColumnName("rqd_l3");
+            entity.Property(e => e.RqdSum)
+                .HasDefaultValueSql("0")
+                .HasComment("Real energy delivered sum")
+                .HasColumnName("rqd_sum");
             entity.Property(e => e.TimeReading)
                 .HasDefaultValueSql("now()")
                 .HasColumnType("timestamp without time zone")

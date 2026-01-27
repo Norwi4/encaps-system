@@ -61,12 +61,21 @@ namespace backend.Controllers
             if (device?.DeviceType == null)
                 return new List<DeviceDashboardParam>();
 
-            // Получаем VendorModel через vendor_id
+            // Получаем VendorModel для plate_info
             Dictionary<string, PlateInfoField>? plateInfo = null;
             List<string> allowedParameters = new List<string>();
             bool isMercuryDevice = false;
             
-            if (device.Vendor.HasValue)
+            // Сначала пытаемся найти по Model (если Model указывает на VendorModel.Id)
+            VendorModel? vendorModel = null;
+            if (device.Model.HasValue)
+            {
+                vendorModel = _context.VendorModels
+                    .FirstOrDefault(vm => vm.Id == device.Model.Value);
+            }
+            
+            // Если не нашли по Model, ищем по VendorId
+            if (vendorModel == null && device.Vendor.HasValue)
             {
                 var vendor = _context.Vendors
                     .FirstOrDefault(v => v.Id == device.Vendor.Value);
@@ -79,14 +88,14 @@ namespace backend.Controllers
                     isMercuryDevice = true;
                 }
                 
-                var vendorModel = _context.VendorModels
+                vendorModel = _context.VendorModels
                     .FirstOrDefault(vm => vm.VendorId == device.Vendor.Value);
-                
-                if (vendorModel != null)
-                {
-                    plateInfo = PlateInfoHelper.ParsePlateInfo(vendorModel.PlateInfo);
-                    allowedParameters = PlateInfoHelper.GetFilteredParameters(plateInfo);
-                }
+            }
+            
+            if (vendorModel != null && !string.IsNullOrEmpty(vendorModel.PlateInfo))
+            {
+                plateInfo = PlateInfoHelper.ParsePlateInfo(vendorModel.PlateInfo);
+                allowedParameters = PlateInfoHelper.GetFilteredParameters(plateInfo);
             }
 
             // Получаем параметры в зависимости от типа устройства
@@ -118,25 +127,50 @@ namespace backend.Controllers
                 foreach (var columnName in allowedParameters)
                 {
                     var prop = PlateInfoHelper.GetPropertyInfo<ElectricityDeviceDatum>(columnName);
+                    var plateInfoField = plateInfo?.GetValueOrDefault(columnName);
+                    
+                    // Если свойство найдено, получаем значение
+                    decimal? decimalValue = null;
                     if (prop != null)
                     {
                         var value = prop.GetValue(latestData);
-                        if (value != null && value is decimal decimalValue)
+                        if (value != null)
                         {
-                            var plateInfoField = plateInfo?.GetValueOrDefault(columnName);
-                            var displayName = NameHelper.GetParameterShortName(prop.Name);
-                            var digits = NameHelper.GetParameterDecimalPlaces(prop.Name);
-                            
-                            // Конвертируем значение для отображения (делим на 1000 для мощностей и энергий)
-                            var displayValue = NameHelper.ConvertToDisplayValue(decimalValue, prop.Name);
-                            
-                            parameters.Add(new DeviceDashboardParam
-                            {
-                                Name = displayName,
-                                Value = displayValue.ToString($"F{digits}")
-                            });
-                            Console.WriteLine($"✅ Added filtered parameter: {columnName} -> {prop.Name} = {decimalValue} (label: {displayName})");
+                            if (value is decimal dec)
+                                decimalValue = dec;
+                            else
+                                decimalValue = value as decimal?;
                         }
+                    }
+                    
+                    // Добавляем параметр если:
+                    // 1. Есть значение ИЛИ
+                    // 2. Есть plateInfoField (даже если свойство не найдено или значение null)
+                    if (decimalValue.HasValue || plateInfoField != null)
+                    {
+                        // Используем Label из plate_info для отображения, если он есть
+                        var displayName = !string.IsNullOrEmpty(plateInfoField?.Label) 
+                            ? plateInfoField.Label 
+                            : (prop != null ? NameHelper.GetParameterShortName(prop.Name) : columnName);
+                        var digits = int.TryParse(plateInfoField?.Digit, out var digitCount) 
+                            ? digitCount 
+                            : (prop != null ? NameHelper.GetParameterDecimalPlaces(prop.Name) : 2);
+                        
+                        // Конвертируем значение для отображения (делим на 1000 для мощностей и энергий)
+                        var displayValue = decimalValue.HasValue 
+                            ? NameHelper.ConvertToDisplayValue(decimalValue.Value, prop?.Name ?? columnName)
+                            : 0;
+                        
+                        parameters.Add(new DeviceDashboardParam
+                        {
+                            Name = displayName,
+                            Value = displayValue.ToString($"F{digits}")
+                        });
+                        Console.WriteLine($"✅ Added filtered parameter: {columnName} -> {prop?.Name ?? "NOT_FOUND"} = {decimalValue?.ToString() ?? "null"} (label: {displayName})");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ Parameter {columnName} skipped: no value and no plateInfoField");
                     }
                 }
             }
@@ -257,22 +291,45 @@ namespace backend.Controllers
                 foreach (var columnName in allowedParameters)
                 {
                     var prop = PlateInfoHelper.GetPropertyInfo<GasDeviceDatum>(columnName);
+                    var plateInfoField = plateInfo?.GetValueOrDefault(columnName);
+                    
+                    // Если свойство найдено, получаем значение
+                    decimal? decimalValue = null;
                     if (prop != null)
                     {
                         var value = prop.GetValue(latestData);
-                        if (value != null && value is decimal decimalValue)
+                        if (value != null)
                         {
-                            var plateInfoField = plateInfo?.GetValueOrDefault(columnName);
-                            var displayName = plateInfoField?.Label ?? NameHelper.GetParameterShortName(prop.Name);
-                            var digits = int.TryParse(plateInfoField?.Digit, out var digitCount) ? digitCount : 2;
-                            
-                            parameters.Add(new DeviceDashboardParam
-                            {
-                                Name = displayName,
-                                Value = decimalValue.ToString($"F{digits}")
-                            });
-                            Console.WriteLine($"✅ Added filtered gas parameter: {columnName} -> {prop.Name} = {decimalValue} (label: {displayName})");
+                            if (value is decimal dec)
+                                decimalValue = dec;
+                            else
+                                decimalValue = value as decimal?;
                         }
+                    }
+                    
+                    // Добавляем параметр если:
+                    // 1. Есть значение ИЛИ
+                    // 2. Есть plateInfoField (даже если свойство не найдено или значение null)
+                    if (decimalValue.HasValue || plateInfoField != null)
+                    {
+                        // Используем Label из plate_info для отображения, если он есть
+                        var displayName = !string.IsNullOrEmpty(plateInfoField?.Label) 
+                            ? plateInfoField.Label 
+                            : (prop != null ? NameHelper.GetParameterShortName(prop.Name) : columnName);
+                        var digits = int.TryParse(plateInfoField?.Digit, out var digitCount) 
+                            ? digitCount 
+                            : 2;
+                        
+                        parameters.Add(new DeviceDashboardParam
+                        {
+                            Name = displayName,
+                            Value = decimalValue.HasValue ? decimalValue.Value.ToString($"F{digits}") : "0"
+                        });
+                        Console.WriteLine($"✅ Added filtered gas parameter: {columnName} -> {prop?.Name ?? "NOT_FOUND"} = {decimalValue?.ToString() ?? "null"} (label: {displayName})");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ Gas parameter {columnName} skipped: no value and no plateInfoField");
                     }
                 }
             }
@@ -342,6 +399,101 @@ namespace backend.Controllers
                     LastReceive = device.LastReceive,
                     SortId = device.SortId,
                     DevAddr = deviceSetting?.DevAddr
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("device/{id}/details")]
+        public ActionResult<DeviceDetailsResponse> GetDeviceDetailsWithParameters(long id)
+        {
+            try
+            {
+                var device = _context.Devices
+                    .Include(d => d.DeviceType)
+                    .Include(d => d.Parent)
+                    .FirstOrDefault(d => d.Id == id);
+
+                if (device == null)
+                    return NotFound(new { error = "Устройство не найдено" });
+
+                // Получаем VendorModel для plate_info
+                Dictionary<string, PlateInfoField>? plateInfo = null;
+                List<string> allowedParameters = new List<string>();
+                bool isMercuryDevice = false;
+                
+                // Сначала пытаемся найти по Model (если Model указывает на VendorModel.Id)
+                VendorModel? vendorModel = null;
+                if (device.Model.HasValue)
+                {
+                    vendorModel = _context.VendorModels
+                        .FirstOrDefault(vm => vm.Id == device.Model.Value);
+                }
+                
+                // Если не нашли по Model, ищем по VendorId
+                if (vendorModel == null && device.Vendor.HasValue)
+                {
+                    var vendor = _context.Vendors
+                        .FirstOrDefault(v => v.Id == device.Vendor.Value);
+                    
+                    // Проверяем, является ли устройство счетчиком Меркурий
+                    if (vendor != null && vendor.Name != null && 
+                        (vendor.Name.Contains("Меркурий", StringComparison.OrdinalIgnoreCase) || 
+                         vendor.Name.Contains("Mercury", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        isMercuryDevice = true;
+                    }
+                    
+                    vendorModel = _context.VendorModels
+                        .FirstOrDefault(vm => vm.VendorId == device.Vendor.Value);
+                }
+                
+                if (vendorModel != null && !string.IsNullOrEmpty(vendorModel.PlateInfo))
+                {
+                    Console.WriteLine($"📋 Found VendorModel for device {id}: Model={vendorModel.Id}, PlateInfo length={vendorModel.PlateInfo.Length}");
+                    plateInfo = PlateInfoHelper.ParsePlateInfo(vendorModel.PlateInfo);
+                    allowedParameters = PlateInfoHelper.GetFilteredParameters(plateInfo);
+                    Console.WriteLine($"📋 Parsed {allowedParameters.Count} allowed parameters from plate_info");
+                    if (plateInfo != null)
+                    {
+                        Console.WriteLine($"📋 All parameters in plate_info ({plateInfo.Count} total):");
+                        foreach (var kvp in plateInfo)
+                        {
+                            Console.WriteLine($"   - {kvp.Key}: Label='{kvp.Value.Label}', Digit='{kvp.Value.Digit}'");
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"⚠️ VendorModel not found for device {id} (Vendor={device.Vendor}, Model={device.Model})");
+                }
+
+                // Получаем параметры в зависимости от типа устройства с учетом plate_info
+                List<DeviceDetailParam> parameters = new List<DeviceDetailParam>();
+                
+                if (device.DeviceType != null)
+                {
+                    parameters = device.DeviceType.Type.ToLower() switch
+                    {
+                        "electrical" => GetElectricalDeviceDetailParametersWithPlateInfo(id, allowedParameters, plateInfo, isMercuryDevice),
+                        "gas" => GetGasDeviceDetailParametersWithPlateInfo(id, allowedParameters, plateInfo),
+                        _ => new List<DeviceDetailParam>()
+                    };
+                }
+
+                var response = new DeviceDetailsResponse
+                {
+                    DeviceId = device.Id,
+                    DeviceName = device.Name,
+                    ObjectName = device.Parent?.Name,
+                    IsActive = device.Active,
+                    LastReading = device.LastReceive,
+                    Parameters = parameters
                 };
 
                 return Ok(response);
@@ -600,6 +752,110 @@ namespace backend.Controllers
             return parameters;
         }
 
+        private List<DeviceDetailParam> GetElectricalDeviceDetailParametersWithPlateInfo(long deviceId, List<string> allowedParameters, Dictionary<string, PlateInfoField>? plateInfo, bool isMercuryDevice = false)
+        {
+            var latestData = _context.ElectricityDeviceData
+                .Where(ed => ed.DeviceId == deviceId)
+                .OrderByDescending(ed => ed.TimeReading)
+                .FirstOrDefault();
+
+            if (latestData == null)
+                return new List<DeviceDetailParam>();
+
+            var parameters = new List<DeviceDetailParam>();
+            
+            // Если есть plate_info, используем только разрешенные параметры
+            if (allowedParameters.Any())
+            {
+                foreach (var columnName in allowedParameters)
+                {
+                    var prop = PlateInfoHelper.GetPropertyInfo<ElectricityDeviceDatum>(columnName);
+                    var plateInfoField = plateInfo?.GetValueOrDefault(columnName);
+                    
+                    // Если свойство найдено, получаем значение
+                    decimal? decimalValue = null;
+                    if (prop != null)
+                    {
+                        var value = prop.GetValue(latestData);
+                        if (value != null)
+                        {
+                            if (value is decimal dec)
+                                decimalValue = dec;
+                            else
+                                decimalValue = value as decimal?;
+                        }
+                    }
+                    
+                    // Добавляем параметр если:
+                    // 1. Есть значение ИЛИ
+                    // 2. Есть plateInfoField (даже если свойство не найдено или значение null)
+                    if (decimalValue.HasValue || plateInfoField != null)
+                    {
+                        // Используем Label из plate_info для FullName, если он есть
+                        var displayName = !string.IsNullOrEmpty(plateInfoField?.Label) 
+                            ? plateInfoField.Label 
+                            : (prop != null ? NameHelper.GetParameterFullName(prop.Name) : columnName);
+                        // ShortName остается стандартным
+                        var shortName = prop != null 
+                            ? NameHelper.GetParameterShortName(prop.Name) 
+                            : columnName;
+                        var digits = int.TryParse(plateInfoField?.Digit, out var digitCount) 
+                            ? digitCount 
+                            : (prop != null ? NameHelper.GetParameterDecimalPlaces(prop.Name) : 2);
+                        
+                        // Логирование для отладки
+                        Console.WriteLine($"📋 Processing parameter {columnName}: prop={prop?.Name ?? "NOT_FOUND"}, value={decimalValue?.ToString() ?? "null"}, Label='{plateInfoField?.Label ?? "N/A"}'");
+                        
+                        // Конвертируем значение для отображения
+                        var displayValue = decimalValue.HasValue 
+                            ? NameHelper.ConvertToDisplayValue(decimalValue.Value, prop?.Name ?? columnName)
+                            : 0;
+                        
+                        parameters.Add(new DeviceDetailParam
+                        {
+                            ShortName = shortName,
+                            FullName = displayName,
+                            Value = displayValue.ToString($"F{digits}"),
+                            Unit = prop != null ? NameHelper.GetParameterUnit(prop.Name) : ""
+                        });
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ Parameter {columnName} skipped: no value and no plateInfoField");
+                    }
+                }
+                
+                Console.WriteLine($"✅ Total parameters added for device {deviceId}: {parameters.Count} (expected: {allowedParameters.Count})");
+            }
+            else
+            {
+                // Fallback на старую логику, если нет plate_info
+                var properties = typeof(ElectricityDeviceDatum).GetProperties()
+                    .Where(p => p.PropertyType == typeof(decimal) || p.PropertyType == typeof(decimal?))
+                    .Where(p => p.Name != "Id" && p.Name != "DeviceId");
+
+                foreach (var prop in properties)
+                {
+                    var value = prop.GetValue(latestData);
+                    if (value != null && value is decimal decimalValue)
+                    {
+                        var displayValue = NameHelper.ConvertToDisplayValue(decimalValue, prop.Name);
+                        var digits = NameHelper.GetParameterDecimalPlaces(prop.Name);
+                        
+                        parameters.Add(new DeviceDetailParam
+                        {
+                            ShortName = NameHelper.GetParameterShortName(prop.Name),
+                            FullName = NameHelper.GetParameterFullName(prop.Name),
+                            Value = displayValue.ToString($"F{digits}"),
+                            Unit = NameHelper.GetParameterUnit(prop.Name)
+                        });
+                    }
+                }
+            }
+
+            return parameters;
+        }
+
         private List<DeviceDetailParam> GetGasDeviceDetailParameters(long deviceId)
         {
             var latestData = _context.GasDeviceData
@@ -627,6 +883,102 @@ namespace backend.Controllers
                         Value = decimalValue.ToString("F3"),
                         Unit = GetGasParameterUnit(prop.Name)
                     });
+                }
+            }
+
+            return parameters;
+        }
+
+        private List<DeviceDetailParam> GetGasDeviceDetailParametersWithPlateInfo(long deviceId, List<string> allowedParameters, Dictionary<string, PlateInfoField>? plateInfo)
+        {
+            var latestData = _context.GasDeviceData
+                .Where(gd => gd.DeviceId == deviceId)
+                .OrderByDescending(gd => gd.ReadingTime)
+                .FirstOrDefault();
+
+            if (latestData == null)
+                return new List<DeviceDetailParam>();
+
+            var parameters = new List<DeviceDetailParam>();
+            
+            // Если есть plate_info, используем только разрешенные параметры
+            if (allowedParameters.Any())
+            {
+                foreach (var columnName in allowedParameters)
+                {
+                    var prop = PlateInfoHelper.GetPropertyInfo<GasDeviceDatum>(columnName);
+                    var plateInfoField = plateInfo?.GetValueOrDefault(columnName);
+                    
+                    // Если свойство найдено, получаем значение
+                    decimal? decimalValue = null;
+                    if (prop != null)
+                    {
+                        var value = prop.GetValue(latestData);
+                        if (value != null)
+                        {
+                            if (value is decimal dec)
+                                decimalValue = dec;
+                            else
+                                decimalValue = value as decimal?;
+                        }
+                    }
+                    
+                    // Добавляем параметр если:
+                    // 1. Есть значение ИЛИ
+                    // 2. Есть plateInfoField (даже если свойство не найдено или значение null)
+                    if (decimalValue.HasValue || plateInfoField != null)
+                    {
+                        // Используем Label из plate_info для FullName, если он есть
+                        var displayName = !string.IsNullOrEmpty(plateInfoField?.Label) 
+                            ? plateInfoField.Label 
+                            : (prop != null ? NameHelper.GetParameterFullName(prop.Name) : columnName);
+                        // ShortName остается стандартным
+                        var shortName = prop != null 
+                            ? NameHelper.GetParameterShortName(prop.Name) 
+                            : columnName;
+                        var digits = int.TryParse(plateInfoField?.Digit, out var digitCount) 
+                            ? digitCount 
+                            : 2;
+                        
+                        // Логирование для отладки
+                        Console.WriteLine($"📋 Processing gas parameter {columnName}: prop={prop?.Name ?? "NOT_FOUND"}, value={decimalValue?.ToString() ?? "null"}, Label='{plateInfoField?.Label ?? "N/A"}'");
+                        
+                        parameters.Add(new DeviceDetailParam
+                        {
+                            ShortName = shortName,
+                            FullName = displayName,
+                            Value = decimalValue.HasValue ? decimalValue.Value.ToString($"F{digits}") : "0",
+                            Unit = prop != null ? GetGasParameterUnit(prop.Name) : ""
+                        });
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ Gas parameter {columnName} skipped: no value and no plateInfoField");
+                    }
+                }
+                
+                Console.WriteLine($"✅ Total gas parameters added for device {deviceId}: {parameters.Count} (expected: {allowedParameters.Count})");
+            }
+            else
+            {
+                // Fallback на старую логику, если нет plate_info
+                var properties = typeof(GasDeviceDatum).GetProperties()
+                    .Where(p => p.PropertyType == typeof(decimal) || p.PropertyType == typeof(decimal?))
+                    .Where(p => p.Name != "Id" && p.Name != "DeviceId");
+
+                foreach (var prop in properties)
+                {
+                    var value = prop.GetValue(latestData);
+                    if (value != null && value is decimal decimalValue)
+                    {
+                        parameters.Add(new DeviceDetailParam
+                        {
+                            ShortName = NameHelper.GetParameterShortName(prop.Name),
+                            FullName = NameHelper.GetParameterFullName(prop.Name),
+                            Value = decimalValue.ToString("F3"),
+                            Unit = GetGasParameterUnit(prop.Name)
+                        });
+                    }
                 }
             }
 

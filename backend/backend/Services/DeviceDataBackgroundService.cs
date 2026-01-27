@@ -43,10 +43,23 @@ public class DeviceDataBackgroundService : BackgroundService
                 // Ждем ровно 10 секунд до следующего цикла
                 await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
             }
+            catch (OperationCanceledException)
+            {
+                // Нормальная остановка сервиса
+                _logger.LogInformation("DeviceDataBackgroundService is being cancelled.");
+                break;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while running DeviceDataBackgroundService");
-                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
             }
         }
 

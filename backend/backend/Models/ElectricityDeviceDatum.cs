@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace backend.Models;
@@ -85,6 +85,11 @@ public partial class ElectricityDeviceDatum
     public decimal? Aq3 { get; set; }
 
     /// <summary>
+    /// Apparent power sum
+    /// </summary>
+    public decimal? AqSum { get; set; }
+
+    /// <summary>
     /// Fund power factor, CosPhi
     /// </summary>
     public decimal? FundPfCf1 { get; set; }
@@ -98,6 +103,11 @@ public partial class ElectricityDeviceDatum
     /// Fund power factor, CosPhi
     /// </summary>
     public decimal? FundPfCf3 { get; set; }
+
+    /// <summary>
+    /// Fund power factor sum
+    /// </summary>
+    public decimal? FundPfSum { get; set; }
 
     /// <summary>
     /// Rotation field
@@ -120,6 +130,11 @@ public partial class ElectricityDeviceDatum
     public decimal? RqcL3 { get; set; }
 
     /// <summary>
+    /// Real energy consumed sum
+    /// </summary>
+    public decimal? RqcSum { get; set; }
+
+    /// <summary>
     /// Real energy delivered
     /// </summary>
     public decimal? RqdL1 { get; set; }
@@ -133,6 +148,11 @@ public partial class ElectricityDeviceDatum
     /// Real energy delivered
     /// </summary>
     public decimal? RqdL3 { get; set; }
+
+    /// <summary>
+    /// Real energy delivered sum
+    /// </summary>
+    public decimal? RqdSum { get; set; }
 
     /// <summary>
     /// Reaktive energy inductive
@@ -163,6 +183,36 @@ public partial class ElectricityDeviceDatum
     /// Reaktive energy capacitive
     /// </summary>
     public decimal? ReactQCL3 { get; set; }
+
+    /// <summary>
+    /// Reactive energy L1
+    /// </summary>
+    public decimal? ReactQL1 { get; set; }
+
+    /// <summary>
+    /// Reactive energy L2
+    /// </summary>
+    public decimal? ReactQL2 { get; set; }
+
+    /// <summary>
+    /// Reactive energy L3
+    /// </summary>
+    public decimal? ReactQL3 { get; set; }
+
+    /// <summary>
+    /// Reactive energy sum
+    /// </summary>
+    public decimal? ReactQSum { get; set; }
+
+    /// <summary>
+    /// Reactive energy inductive sum
+    /// </summary>
+    public decimal? ReactQISum { get; set; }
+
+    /// <summary>
+    /// Reactive energy capacitive sum
+    /// </summary>
+    public decimal? ReactQCSum { get; set; }
 
     /// <summary>
     /// Harmonic THD U
@@ -213,6 +263,11 @@ public partial class ElectricityDeviceDatum
     /// Накопленная энергия с учетом коэффициента трансформации
     /// </summary>
     public decimal? AllEnergyK { get; set; }
+
+    /// <summary>
+    /// Накопленная энергия с учетом коэффициента трансформации (реактивная)
+    /// </summary>
+    public decimal? AllEnergyRK { get; set; }
 
     public virtual Device Device { get; set; } = null!;
 }
