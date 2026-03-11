@@ -1,0 +1,12 @@
+# Build output
+backend/backend/bin/
+backend/backend/obj/
+
+# Generated reports
+backend/backend/Reports/*.xlsx
+
+# Test output
+backend/backend.Tests/
+
+# Frontend tests
+frontend/src/__tests__/
