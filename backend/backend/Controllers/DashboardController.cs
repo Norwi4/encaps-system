@@ -26,9 +26,9 @@ namespace backend.Controllers
         {
             try
             {
-                var now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
-                var todayStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, now.Day, 0, 0, 0), DateTimeKind.Utc);
-                var monthStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, 1, 0, 0, 0), DateTimeKind.Utc);
+                var now = DateTime.UtcNow;
+                var todayStart = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc);
+                var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
                 var yesterdayStart = todayStart.AddDays(-1);
                 var yesterdayEnd = todayStart.AddSeconds(-1);
                 
@@ -82,9 +82,9 @@ namespace backend.Controllers
         {
             try
             {
-                var now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
-                var todayStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, now.Day, 0, 0, 0), DateTimeKind.Utc);
-                
+                var now = DateTime.UtcNow;
+                var todayStart = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc);
+
                 // Площадки с их device_id согласно формуле
                 var sites = new Dictionary<string, List<long>>
                 {
@@ -122,9 +122,8 @@ namespace backend.Controllers
 
                     // Сначала пытаемся получить данные из таблицы consumption_by_month
                     var monthData = _context.ConsumptionByMonth
-                        .Where(c => c.DeviceId == deviceId && 
-                                    c.Dt.Year == startDate.Year && 
-                                    c.Dt.Month == startDate.Month)
+                        .Where(c => c.DeviceId == deviceId &&
+                                    c.Dt == DateOnly.FromDateTime(startDate))
                         .Sum(c => (decimal?)c.Value);
 
                     if (monthData.HasValue && monthData.Value > 0)
@@ -156,9 +155,8 @@ namespace backend.Controllers
                     {
                         // Получаем данные по газу из таблицы consumption_by_month
                         var gasMonthData = _context.ConsumptionByMonth
-                            .Where(c => c.DeviceId == gasDeviceId && 
-                                        c.Dt.Year == startDate.Year && 
-                                        c.Dt.Month == startDate.Month)
+                            .Where(c => c.DeviceId == gasDeviceId &&
+                                        c.Dt == DateOnly.FromDateTime(startDate))
                             .Sum(c => (decimal?)c.Value);
 
                         if (gasMonthData.HasValue && gasMonthData.Value > 0)
@@ -216,14 +214,13 @@ namespace backend.Controllers
                     {
                         try
                         {
-                            var now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
-                            var todayStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, now.Day, 0, 0, 0), DateTimeKind.Utc);
-                            var todayEnd = todayStart.AddDays(1).AddSeconds(-1); // Конец сегодняшнего дня (23:59:59)
+                            var todayUtc = DateTime.UtcNow;
+                            var todayStart = new DateTime(todayUtc.Year, todayUtc.Month, todayUtc.Day, 0, 0, 0, DateTimeKind.Utc);
+                            var todayEnd = todayStart.AddDays(1).AddSeconds(-1);
 
-                            // Берем последнее значение за сегодня, даже если оно было несколько часов назад
                             var lastValue = _context.ConsumptionByToday
-                                .Where(c => c.DeviceId == deviceId && 
-                                            c.Dt >= todayStart && 
+                                .Where(c => c.DeviceId == deviceId &&
+                                            c.Dt >= todayStart &&
                                             c.Dt <= todayEnd)
                                 .OrderByDescending(c => c.Dt)
                                 .Select(c => c.Value)
@@ -277,24 +274,22 @@ namespace backend.Controllers
                     }
                     else if (periodType == "today")
                     {
-                        // Для сегодня берем последнее значение из consumption_by_today (как для электричества)
                         foreach (var gasDeviceId in gasSites[site.Key])
                         {
                             try
                             {
-                                var now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
-                                var todayStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, now.Day, 0, 0, 0), DateTimeKind.Utc);
-                                var todayEnd = todayStart.AddDays(1).AddSeconds(-1); // Конец сегодняшнего дня (23:59:59)
+                                var todayUtc = DateTime.UtcNow;
+                                var todayStart = new DateTime(todayUtc.Year, todayUtc.Month, todayUtc.Day, 0, 0, 0, DateTimeKind.Utc);
+                                var todayEnd = todayStart.AddDays(1).AddSeconds(-1);
 
-                                // Берем последнее значение за сегодня, даже если оно было несколько часов назад
                                 var lastGasValue = _context.ConsumptionByToday
-                                    .Where(c => c.DeviceId == gasDeviceId && 
-                                                c.Dt >= todayStart && 
+                                    .Where(c => c.DeviceId == gasDeviceId &&
+                                                c.Dt >= todayStart &&
                                                 c.Dt <= todayEnd)
                                     .OrderByDescending(c => c.Dt)
                                     .Select(c => c.Value)
                                     .FirstOrDefault();
-                                
+
                                 gasValue += lastGasValue;
                             }
                             catch (Exception ex)
@@ -445,9 +440,9 @@ namespace backend.Controllers
             {
                 // Получаем данные из таблицы consumption_by_month
                 var consumption = _context.ConsumptionByMonth
-                    .Where(c => c.DeviceId == deviceId && 
-                                c.Dt >= startDate && 
-                                c.Dt <= endDate)
+                    .Where(c => c.DeviceId == deviceId &&
+                                c.Dt >= DateOnly.FromDateTime(startDate) &&
+                                c.Dt <= DateOnly.FromDateTime(endDate))
                     .Sum(c => (decimal?)c.Value) ?? 0;
                 
                 return consumption;

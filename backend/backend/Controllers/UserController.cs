@@ -78,26 +78,28 @@ namespace backend.Controllers
         {
             try
             {
-                // Логируем действие пользователя
-                var userAction = new UserAction
+                // Логируем действие пользователя только если UserId передан
+                if (request.UserId.HasValue)
                 {
-                    UserId = request.UserId ?? 0,
-                    ActionId = 5, // ID действия "Изменение времени опроса"
-                    Date = DateTime.Now,
-                    Description = $"Время опроса изменено на {request.ScanIntervalMs} мс"
-                };
-                _context.UserActions.Add(userAction);
-                _context.SaveChanges();
+                    var userAction = new UserAction
+                    {
+                        UserId = request.UserId.Value,
+                        ActionId = 5, // ID действия "Изменение времени опроса"
+                        Date = DateTime.Now,
+                        Description = $"Время опроса изменено на {request.ScanIntervalMs} мс"
+                    };
+                    _context.UserActions.Add(userAction);
+                    _context.SaveChanges();
 
-                // Отправляем уведомление через SignalR
-                await _hubContext.Clients.Group("notifications").SendAsync("UserActionCreated", new
-                {
-                    id = userAction.Id,
-                    userId = userAction.UserId,
-                    actionId = userAction.ActionId,
-                    date = userAction.Date,
-                    description = userAction.Description
-                });
+                    await _hubContext.Clients.Group("notifications").SendAsync("UserActionCreated", new
+                    {
+                        id = userAction.Id,
+                        userId = userAction.UserId,
+                        actionId = userAction.ActionId,
+                        date = userAction.Date,
+                        description = userAction.Description
+                    });
+                }
 
                 // Обновляем scan_interval у всех устройств
                 var deviceSettings = _context.DeviceSettings.ToList();

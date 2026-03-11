@@ -9,5 +9,6 @@ public class DeviceDetailsResponse
     public string? ObjectName { get; set; }
     public bool IsActive { get; set; }
     public DateTime? LastReading { get; set; }
+    public long? SortId { get; set; }
     public List<DeviceDetailParam> Parameters { get; set; } = new();
 }

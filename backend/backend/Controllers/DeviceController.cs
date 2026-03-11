@@ -493,6 +493,7 @@ namespace backend.Controllers
                     ObjectName = device.Parent?.Name,
                     IsActive = device.Active,
                     LastReading = device.LastReceive,
+                    SortId = device.SortId,
                     Parameters = parameters
                 };
 

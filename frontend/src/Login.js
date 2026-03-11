@@ -47,7 +47,6 @@ function Login() {
       }
       
       navigate("/dashboard");
-      alert("Успешная авторизация!");
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
         alert(err.response.data.message);

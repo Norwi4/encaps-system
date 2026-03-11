@@ -28,7 +28,7 @@ public class ConsumptionByMonth
     public long Id { get; set; }
 
     [Column("dt")]
-    public DateTime Dt { get; set; }
+    public DateOnly Dt { get; set; }
 
     [Column("value")]
     public decimal Value { get; set; }

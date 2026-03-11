@@ -31,6 +31,7 @@ function DataVisualization() {
   const [filteredMeters, setFilteredMeters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [aggregation, setAggregation] = useState('hour'); // 'minute', 'hour', 'day'
+  const [collapsedGroups, setCollapsedGroups] = useState(new Set());
 
   useEffect(() => {
     fetchObjects();
@@ -929,31 +930,46 @@ function DataVisualization() {
           <h3 className="font-semibold text-sm mb-3 font-open-sans text-gray-800">Параметры</h3>
           
           <div className="space-y-2">
-            {parameters.map((paramGroup) => (
-              <div key={paramGroup.key} className="border-b border-gray-200 pb-3 mb-3">
-                <label className="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer">
-                  <span className="text-sm font-open-sans font-medium text-gray-700">{paramGroup.name}</span>
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </label>
-                <div className="ml-4 mt-2 space-y-1 max-h-32 overflow-y-auto">
-                  {paramGroup.parameters.map((param) => (
-                    <label key={param.code} className="flex items-center hover:bg-gray-50 p-1 rounded cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedParameters.includes(param.code)}
-                        onChange={() => handleParameterToggle(param.code)}
-                        className="mr-2 w-4 h-4 text-red-700 border-gray-300 rounded focus:ring-red-500"
-                      />
-                      <span className="text-sm font-open-sans text-gray-600" title={param.shortName}>
-                        {param.fullName}
-                      </span>
-                    </label>
-                  ))}
+            {parameters.map((paramGroup) => {
+              const isCollapsed = collapsedGroups.has(paramGroup.key);
+              return (
+                <div key={paramGroup.key} className="border-b border-gray-200 pb-3 mb-3">
+                  <label
+                    className="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer"
+                    onClick={() => setCollapsedGroups(prev => {
+                      const next = new Set(prev);
+                      next.has(paramGroup.key) ? next.delete(paramGroup.key) : next.add(paramGroup.key);
+                      return next;
+                    })}
+                  >
+                    <span className="text-sm font-open-sans font-medium text-gray-700">{paramGroup.name}</span>
+                    <svg
+                      className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </label>
+                  {!isCollapsed && (
+                    <div className="ml-4 mt-2 space-y-1 max-h-32 overflow-y-auto">
+                      {paramGroup.parameters.map((param) => (
+                        <label key={param.code} className="flex items-center hover:bg-gray-50 p-1 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedParameters.includes(param.code)}
+                            onChange={() => handleParameterToggle(param.code)}
+                            className="mr-2 w-4 h-4 text-red-700 border-gray-300 rounded focus:ring-red-500"
+                          />
+                          <span className="text-sm font-open-sans text-gray-600" title={param.shortName}>
+                            {param.fullName}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

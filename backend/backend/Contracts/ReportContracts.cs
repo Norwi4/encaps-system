@@ -7,6 +7,9 @@ public class CreateReportRequest
     public string Type { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public long? CreatedByUserId { get; set; }
+    public long[] MeterIds { get; set; } = Array.Empty<long>();
+    public DateTime? DateFrom { get; set; }
+    public DateTime? DateTo { get; set; }
 }
 
 public class CreateAdvancedReportRequest

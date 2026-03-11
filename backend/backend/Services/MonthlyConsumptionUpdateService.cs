@@ -129,7 +129,7 @@ public class MonthlyConsumptionUpdateService : BackgroundService
                     {
                         // Обновляем существующую запись
                         existingRecord.Value = totalConsumption;
-                        existingRecord.Dt = previousMonthStart;
+                        existingRecord.Dt = DateOnly.FromDateTime(previousMonthStart);
                         _logger.LogInformation($"Обновлена запись для device_id={deviceId} за {previousMonth:yyyy-MM}: {totalConsumption}");
                     }
                     else
@@ -138,7 +138,7 @@ public class MonthlyConsumptionUpdateService : BackgroundService
                         var newRecord = new ConsumptionByMonth
                         {
                             DeviceId = deviceId,
-                            Dt = previousMonthStart,
+                            Dt = DateOnly.FromDateTime(previousMonthStart),
                             Value = totalConsumption
                         };
                         context.ConsumptionByMonth.Add(newRecord);
@@ -172,7 +172,7 @@ public class MonthlyConsumptionUpdateService : BackgroundService
                     {
                         // Обновляем существующую запись
                         existingRecord.Value = totalConsumption;
-                        existingRecord.Dt = previousMonthStart;
+                        existingRecord.Dt = DateOnly.FromDateTime(previousMonthStart);
                         _logger.LogInformation($"Обновлена запись для газа device_id={deviceId} за {previousMonth:yyyy-MM}: {totalConsumption}");
                     }
                     else
@@ -181,7 +181,7 @@ public class MonthlyConsumptionUpdateService : BackgroundService
                         var newRecord = new ConsumptionByMonth
                         {
                             DeviceId = deviceId,
-                            Dt = previousMonthStart,
+                            Dt = DateOnly.FromDateTime(previousMonthStart),
                             Value = totalConsumption
                         };
                         context.ConsumptionByMonth.Add(newRecord);

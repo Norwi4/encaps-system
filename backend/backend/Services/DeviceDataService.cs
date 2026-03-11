@@ -417,11 +417,12 @@ public class DeviceDataService : IDeviceDataService
     {
         try
         {
-            var now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
-            var todayStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, now.Day, 0, 0, 0), DateTimeKind.Utc);
-            
-            // Площадки с их device_id согласно формуле
-            var sites = new Dictionary<string, List<long>>
+            var now = DateTime.UtcNow;
+            var todayStart = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc);
+            var todayEnd = todayStart.AddDays(1).AddSeconds(-1);
+
+            // Электрические счетчики по площадкам
+            var electricSites = new Dictionary<string, List<long>>
             {
                 { "КВТ-Юг", new List<long> { 18, 25 } },
                 { "ЛЦ", new List<long> { 17 } },
@@ -430,32 +431,55 @@ public class DeviceDataService : IDeviceDataService
                 { "РСК", new List<long> { 35, 45 } }
             };
 
+            // Газовые счетчики по площадкам (та же таблица ConsumptionByToday)
+            var gasSites = new Dictionary<string, List<long>>
+            {
+                { "КВТ-Юг", new List<long> { 31 } },
+                { "КВТ-Восток", new List<long> { 32 } },
+                { "КВТ-Север", new List<long> { 37 } }
+            };
+
             var consumptionData = new List<object>();
 
-            foreach (var site in sites)
+            foreach (var site in electricSites)
             {
-                decimal totalValue = 0;
-
+                decimal electricityValue = 0;
                 foreach (var deviceId in site.Value)
                 {
-                    var todayEnd = todayStart.AddDays(1).AddSeconds(-1); // Конец сегодняшнего дня (23:59:59)
-                    
-                    // Берем последнее значение за сегодня, даже если оно было несколько часов назад
                     var value = await _context.ConsumptionByToday
-                        .Where(c => c.DeviceId == deviceId && 
-                                    c.Dt >= todayStart && 
+                        .Where(c => c.DeviceId == deviceId &&
+                                    c.Dt >= todayStart &&
                                     c.Dt <= todayEnd)
                         .OrderByDescending(c => c.Dt)
                         .Select(c => c.Value)
                         .FirstOrDefaultAsync();
 
-                    totalValue += value;
+                    electricityValue += value;
                 }
 
+                decimal gasValue = 0;
+                if (gasSites.TryGetValue(site.Key, out var gasDeviceIds))
+                {
+                    foreach (var gasDeviceId in gasDeviceIds)
+                    {
+                        var value = await _context.ConsumptionByToday
+                            .Where(c => c.DeviceId == gasDeviceId &&
+                                        c.Dt >= todayStart &&
+                                        c.Dt <= todayEnd)
+                            .OrderByDescending(c => c.Dt)
+                            .Select(c => c.Value)
+                            .FirstOrDefaultAsync();
+
+                        gasValue += value;
+                    }
+                }
+
+                // Имена полей совпадают со структурой SiteConsumptionData из /api/Dashboard/metrics
                 consumptionData.Add(new
                 {
-                    Site = site.Key,
-                    Value = totalValue
+                    siteName = site.Key,
+                    electricityConsumption = Math.Round(electricityValue, 2),
+                    gasConsumption = Math.Round(gasValue, 2)
                 });
             }
 

@@ -173,7 +173,6 @@ namespace backend.Controllers
             if (meterIds != null && meterIds.Length > 0)
             {
                 query = query.Where(ed => meterIds.Contains(ed.DeviceId));
-                var test = query.ToList();
             }
 
             var rawData = query
@@ -184,23 +183,41 @@ namespace backend.Controllers
 
             // Создаем временные интервалы для агрегации
             var intervals = CreateTimeIntervals(startDate, endDate, aggregation);
-            
+
             // Получаем все устройства одним запросом для оптимизации
             var deviceIds = rawData.Select(ed => ed.DeviceId).Distinct().ToArray();
             var devices = _context.Devices
                 .Include(d => d.Parent)
                 .Where(d => deviceIds.Contains(d.Id))
                 .ToDictionary(d => d.Id, d => d);
-            
+
+            // Загружаем данные из consumption_by_day для параметра DailyConsumption
+            var dailyConsumptionData = new Dictionary<(long deviceId, DateOnly date), decimal>();
+            if (meterIds != null && meterIds.Length > 0)
+            {
+                var startDateOnly = DateOnly.FromDateTime(startDate);
+                var endDateOnly = DateOnly.FromDateTime(endDate);
+                var dailyData = _context.ConsumptionByDay
+                    .Where(c => meterIds.Contains(c.DeviceId) && c.Dt >= startDateOnly && c.Dt <= endDateOnly)
+                    .ToList();
+                foreach (var d in dailyData)
+                    dailyConsumptionData[(d.DeviceId, d.Dt)] = d.Value;
+            }
+
+            // Предварительно группируем данные по deviceId — избегаем O(intervals × records) сканирования
+            var dataByDevice = rawData
+                .GroupBy(ed => ed.DeviceId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
             // Агрегируем данные по интервалам
             var result = new List<VisualizationDataPoint>();
-            
+
             foreach (var interval in intervals)
             {
                 foreach (var deviceId in meterIds ?? new long[0])
                 {
-                    var deviceData = rawData.Where(ed => ed.DeviceId == deviceId).ToList();
-                    var intervalData = deviceData.Where(ed => 
+                    if (!dataByDevice.TryGetValue(deviceId, out var deviceData)) continue;
+                    var intervalData = deviceData.Where(ed =>
                         ed.TimeReading >= interval.Start && ed.TimeReading < interval.End).ToList();
                     
                     if (intervalData.Count > 0)
@@ -240,9 +257,11 @@ namespace backend.Controllers
                                 ["Aq1"] = firstItem.Aq1 ?? 0,
                                 ["Aq2"] = firstItem.Aq2 ?? 0,
                                 ["Aq3"] = firstItem.Aq3 ?? 0,
+                                ["AqSum"] = firstItem.AqSum ?? 0,
                                 ["FundPfCf1"] = firstItem.FundPfCf1 ?? 0,
                                 ["FundPfCf2"] = firstItem.FundPfCf2 ?? 0,
                                 ["FundPfCf3"] = firstItem.FundPfCf3 ?? 0,
+                                ["FundPfSum"] = firstItem.FundPfSum ?? 0,
                                 ["RotationField"] = firstItem.RotationField ?? 0,
                                 ["RqcL1"] = firstItem.RqcL1 ?? 0,
                                 ["RqcL2"] = firstItem.RqcL2 ?? 0,
@@ -265,7 +284,9 @@ namespace backend.Controllers
                                 ["Angle1"] = firstItem.Angle1 ?? 0,
                                 ["Angle2"] = firstItem.Angle2 ?? 0,
                                 ["Angle3"] = firstItem.Angle3 ?? 0,
-                                ["AllEnergyK"] = firstItem.AllEnergyK ?? 0
+                                ["AllEnergyK"] = firstItem.AllEnergyK ?? 0,
+                                ["AllEnergyRK"] = firstItem.AllEnergyRK ?? 0,
+                                ["DailyConsumption"] = dailyConsumptionData.TryGetValue((deviceId, DateOnly.FromDateTime(interval.Start)), out var dailyVal) ? dailyVal : 0
                             }
                         });
                     }
@@ -394,17 +415,17 @@ namespace backend.Controllers
                     Key = "current", 
                     Parameters = new[] { "IL1", "IL2", "IL3" } 
                 },
-                new VisualizationParameter { 
-                    Name = "Мощность", 
-                    Key = "power", 
-                    Parameters = new[] { "PL1", "PL2", "PL3", "PSum", "QL1", "QL2", "QL3", "QSum", "Aq1", "Aq2", "Aq3" } 
+                new VisualizationParameter {
+                    Name = "Мощность",
+                    Key = "power",
+                    Parameters = new[] { "PL1", "PL2", "PL3", "PSum", "QL1", "QL2", "QL3", "QSum", "Aq1", "Aq2", "Aq3", "AqSum", "FundPfSum" }
                 },
-                new VisualizationParameter { 
+                new VisualizationParameter {
                     Name = "Энергия", 
                     Key = "energy", 
-                    Parameters = new[] { "AllEnergy", "ReactiveEnergySum", "RqcL1", "RqcL2", "RqcL3", "RqdL1", "RqdL2", "RqdL3", "ReactQIL1", "ReactQIL2", "ReactQIL3", "ReactQCL1", "ReactQCL2", "ReactQCL3", "AllEnergyK" } 
+                    Parameters = new[] { "AllEnergyK", "AllEnergyRK" }
                 },
-                new VisualizationParameter { 
+                new VisualizationParameter {
                     Name = "Коэффициент мощности", 
                     Key = "powerFactor", 
                     Parameters = new[] { "FundPfCf1", "FundPfCf2", "FundPfCf3" } 
@@ -424,10 +445,10 @@ namespace backend.Controllers
                     Key = "angles", 
                     Parameters = new[] { "Angle1", "Angle2", "Angle3" } 
                 },
-                new VisualizationParameter { 
-                    Name = "Вращение", 
-                    Key = "rotation", 
-                    Parameters = new[] { "RotationField" } 
+                new VisualizationParameter {
+                    Name = "* Расход за сутки",
+                    Key = "dailyConsumption",
+                    Parameters = new[] { "DailyConsumption" }
                 }
             };
         }
@@ -471,10 +492,10 @@ namespace backend.Controllers
                             ShortName = NameHelper.GetParameterShortName(p) 
                         }).ToList()
                 },
-                new VisualizationParameterReadable { 
-                    Name = "Мощность", 
-                    Key = "power", 
-                    Parameters = new[] { "PL1", "PL2", "PL3", "PSum", "QL1", "QL2", "QL3", "QSum", "Aq1", "Aq2", "Aq3" }
+                new VisualizationParameterReadable {
+                    Name = "Мощность",
+                    Key = "power",
+                    Parameters = new[] { "PL1", "PL2", "PL3", "PSum", "QL1", "QL2", "QL3", "QSum", "Aq1", "Aq2", "Aq3", "AqSum", "FundPfSum" }
                         .Select(p => new VisualizationParameterItem 
                         { 
                             Code = p, 
@@ -485,7 +506,7 @@ namespace backend.Controllers
                 new VisualizationParameterReadable { 
                     Name = "Энергия", 
                     Key = "energy", 
-                    Parameters = new[] { "AllEnergy", "ReactiveEnergySum", "RqcL1", "RqcL2", "RqcL3", "RqdL1", "RqdL2", "RqdL3", "ReactQIL1", "ReactQIL2", "ReactQIL3", "ReactQCL1", "ReactQCL2", "ReactQCL3", "AllEnergyK" }
+                    Parameters = new[] { "AllEnergyK", "AllEnergyRK" }
                         .Select(p => new VisualizationParameterItem 
                         { 
                             Code = p, 
@@ -537,16 +558,18 @@ namespace backend.Controllers
                             ShortName = NameHelper.GetParameterShortName(p) 
                         }).ToList()
                 },
-                new VisualizationParameterReadable { 
-                    Name = "Вращение", 
-                    Key = "rotation", 
-                    Parameters = new[] { "RotationField" }
-                        .Select(p => new VisualizationParameterItem 
-                        { 
-                            Code = p, 
-                            FullName = NameHelper.GetParameterFullName(p), 
-                            ShortName = NameHelper.GetParameterShortName(p) 
-                        }).ToList()
+                new VisualizationParameterReadable {
+                    Name = "* Расход за сутки",
+                    Key = "dailyConsumption",
+                    Parameters = new List<VisualizationParameterItem>
+                    {
+                        new VisualizationParameterItem
+                        {
+                            Code = "DailyConsumption",
+                            FullName = "* Расход энергии за сутки",
+                            ShortName = "* Расход/сутки"
+                        }
+                    }
                 }
             };
         }

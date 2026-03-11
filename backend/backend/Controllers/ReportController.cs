@@ -49,8 +49,10 @@ public class ReportController : ControllerBase
             // Фильтрация по пользовательскому периоду
             if (startDate.HasValue && endDate.HasValue)
             {
-                reportsQuery = baseQuery.Where(r => r.CreatedAt >= startDate.Value && r.CreatedAt <= endDate.Value);
-                Console.WriteLine($"Фильтр: пользовательский период с {startDate} по {endDate}");
+                // Расширяем конечную дату до конца дня (23:59:59), т.к. фронтенд передаёт только дату без времени
+                var endOfDay = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                reportsQuery = baseQuery.Where(r => r.CreatedAt >= startDate.Value && r.CreatedAt <= endOfDay);
+                Console.WriteLine($"Фильтр: пользовательский период с {startDate} по {endOfDay}");
             }
             else
             {
@@ -162,10 +164,21 @@ public class ReportController : ControllerBase
                     range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
                 }
 
-                // Получаем реальные данные из базы (пример с ElectricityDeviceData)
-                var data = await _context.ElectricityDeviceData
-                    .OrderByDescending(d => d.TimeReading)
-                    .Take(100)
+                // Получаем данные с учётом фильтров из запроса
+                var dataQuery = _context.ElectricityDeviceData.AsQueryable();
+
+                if (request.MeterIds.Length > 0)
+                    dataQuery = dataQuery.Where(d => request.MeterIds.Contains(d.DeviceId));
+
+                if (request.DateFrom.HasValue)
+                    dataQuery = dataQuery.Where(d => d.TimeReading >= request.DateFrom.Value);
+
+                if (request.DateTo.HasValue)
+                    dataQuery = dataQuery.Where(d => d.TimeReading <= request.DateTo.Value);
+
+                var data = await dataQuery
+                    .OrderBy(d => d.TimeReading)
+                    .Take(10000)
                     .ToListAsync();
 
                 int row = 2;
