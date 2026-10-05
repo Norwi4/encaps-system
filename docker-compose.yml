@@ -8,6 +8,10 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://0.0.0.0:5000  # Слушаем все интерфейсы
       - TZ=Europe/Moscow
+      # БД на хост-машине: localhost внутри контейнера — это сам контейнер, поэтому идём через host.docker.internal
+      - ConnectionStrings__DefaultConnection=Host=host.docker.internal;Database=bms;Username=encaps;Password=Matador_1980
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Нужно на Linux, чтобы host.docker.internal указывал на хост
     ports:
       - "5000:5000"  # Публикуем порт 5000 на хосте
     volumes:
