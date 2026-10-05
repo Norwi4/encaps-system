@@ -201,7 +201,7 @@ namespace backend.Controllers
                     .Where(c => meterIds.Contains(c.DeviceId) && c.Dt >= startDateOnly && c.Dt <= endDateOnly)
                     .ToList();
                 foreach (var d in dailyData)
-                    dailyConsumptionData[(d.DeviceId, d.Dt)] = d.Value;
+                    dailyConsumptionData[(d.DeviceId, d.Dt)] = d.Value ?? 0;
             }
 
             // Предварительно группируем данные по deviceId — избегаем O(intervals × records) сканирования

@@ -12,7 +12,7 @@ public class ConsumptionByDay
     public DateOnly Dt { get; set; }
 
     [Column("value")]
-    public decimal Value { get; set; }
+    public decimal? Value { get; set; }
 
     [Column("device_id")]
     public long DeviceId { get; set; }
@@ -31,7 +31,7 @@ public class ConsumptionByMonth
     public DateOnly Dt { get; set; }
 
     [Column("value")]
-    public decimal Value { get; set; }
+    public decimal? Value { get; set; }
 
     [Column("device_id")]
     public long DeviceId { get; set; }
@@ -50,7 +50,7 @@ public class ConsumptionByToday
     public DateTime Dt { get; set; }
 
     [Column("value")]
-    public decimal Value { get; set; }
+    public decimal? Value { get; set; }
 
     [Column("device_id")]
     public long DeviceId { get; set; }

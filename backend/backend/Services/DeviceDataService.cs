@@ -448,13 +448,13 @@ public class DeviceDataService : IDeviceDataService
                 {
                     var value = await _context.ConsumptionByToday
                         .Where(c => c.DeviceId == deviceId &&
-                                    c.Dt >= todayStart &&
+                                    c.Value != null && c.Dt >= todayStart &&
                                     c.Dt <= todayEnd)
                         .OrderByDescending(c => c.Dt)
                         .Select(c => c.Value)
                         .FirstOrDefaultAsync();
 
-                    electricityValue += value;
+                    electricityValue += value ?? 0;
                 }
 
                 decimal gasValue = 0;
@@ -464,13 +464,13 @@ public class DeviceDataService : IDeviceDataService
                     {
                         var value = await _context.ConsumptionByToday
                             .Where(c => c.DeviceId == gasDeviceId &&
-                                        c.Dt >= todayStart &&
+                                        c.Value != null && c.Dt >= todayStart &&
                                         c.Dt <= todayEnd)
                             .OrderByDescending(c => c.Dt)
                             .Select(c => c.Value)
                             .FirstOrDefaultAsync();
 
-                        gasValue += value;
+                        gasValue += value ?? 0;
                     }
                 }
 

@@ -141,7 +141,7 @@ namespace backend.Controllers
                             .Where(c => c.DeviceId == deviceId && 
                                         c.Dt >= monthStart && 
                                         c.Dt <= monthEnd)
-                            .Sum(c => c.Value);
+                            .Sum(c => c.Value) ?? 0;
                     }
 
                     totalValue += consumption;
@@ -198,7 +198,7 @@ namespace backend.Controllers
     
                         value = _context.ConsumptionByDay
                             .Where(c => c.DeviceId == deviceId && c.Dt >= monthStart && c.Dt <= monthEnd)
-                            .Sum(c => c.Value);
+                            .Sum(c => c.Value) ?? 0;
                     }
                     else if (periodType == "day")
                     {
@@ -208,7 +208,7 @@ namespace backend.Controllers
                             .Select(c => c.Value)
                             .FirstOrDefault();
     
-                        value = lastValue;
+                        value = lastValue ?? 0;
                     }
                     else if (periodType == "today")
                     {
@@ -220,13 +220,13 @@ namespace backend.Controllers
 
                             var lastValue = _context.ConsumptionByToday
                                 .Where(c => c.DeviceId == deviceId &&
-                                            c.Dt >= todayStart &&
+                                            c.Value != null && c.Dt >= todayStart &&
                                             c.Dt <= todayEnd)
                                 .OrderByDescending(c => c.Dt)
                                 .Select(c => c.Value)
                                 .FirstOrDefault();
 
-                            value = lastValue;
+                            value = lastValue ?? 0;
                         }
                         catch (Exception ex)
                         {
@@ -254,7 +254,7 @@ namespace backend.Controllers
                                 .Where(c => c.DeviceId == gasDeviceId && 
                                             c.Dt >= monthStart && 
                                             c.Dt <= monthEnd)
-                                .Sum(c => c.Value);
+                                .Sum(c => c.Value) ?? 0;
                         }
                     }
                     else if (periodType == "day")
@@ -269,7 +269,7 @@ namespace backend.Controllers
                                 .Select(c => c.Value)
                                 .FirstOrDefault();
                             
-                            gasValue += lastGasValue;
+                            gasValue += lastGasValue ?? 0;
                         }
                     }
                     else if (periodType == "today")
@@ -284,13 +284,13 @@ namespace backend.Controllers
 
                                 var lastGasValue = _context.ConsumptionByToday
                                     .Where(c => c.DeviceId == gasDeviceId &&
-                                                c.Dt >= todayStart &&
+                                                c.Value != null && c.Dt >= todayStart &&
                                                 c.Dt <= todayEnd)
                                     .OrderByDescending(c => c.Dt)
                                     .Select(c => c.Value)
                                     .FirstOrDefault();
 
-                                gasValue += lastGasValue;
+                                gasValue += lastGasValue ?? 0;
                             }
                             catch (Exception ex)
                             {

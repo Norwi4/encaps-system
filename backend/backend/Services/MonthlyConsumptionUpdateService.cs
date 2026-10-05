@@ -117,7 +117,7 @@ public class MonthlyConsumptionUpdateService : BackgroundService
                         .Where(c => c.DeviceId == deviceId && 
                                     c.Dt >= monthStart && 
                                     c.Dt <= monthEnd)
-                        .SumAsync(c => c.Value);
+                        .SumAsync(c => c.Value) ?? 0;
 
                     // Проверяем, существует ли уже запись за этот месяц для этого устройства
                     var existingRecord = await context.ConsumptionByMonth
@@ -160,7 +160,7 @@ public class MonthlyConsumptionUpdateService : BackgroundService
                         .Where(c => c.DeviceId == deviceId && 
                                     c.Dt >= monthStart && 
                                     c.Dt <= monthEnd)
-                        .SumAsync(c => c.Value);
+                        .SumAsync(c => c.Value) ?? 0;
 
                     // Проверяем, существует ли уже запись за этот месяц для этого устройства
                     var existingRecord = await context.ConsumptionByMonth
